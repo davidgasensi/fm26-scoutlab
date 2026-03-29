@@ -1,6 +1,13 @@
 "use client";
 
-export default function Header() {
+import { User } from "firebase/auth";
+import AuthButton from "./AuthButton";
+
+interface HeaderProps {
+  user: User | null;
+}
+
+export default function Header({ user }: HeaderProps) {
   return (
     <header className="relative z-10 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-secondary)]/80 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-6 py-5 flex items-center gap-4">
@@ -23,7 +30,7 @@ export default function Header() {
           <div className="absolute inset-0 rounded-lg bg-[var(--color-accent)]/5 blur-md" />
         </div>
 
-        <div>
+        <div className="flex-1">
           <h1
             className="text-xl font-bold tracking-tight"
             style={{ fontFamily: "var(--font-display)" }}
@@ -38,6 +45,7 @@ export default function Header() {
             Analizador de roles
           </p>
         </div>
+        <AuthButton user={user} />
       </div>
     </header>
   );

@@ -69,6 +69,28 @@ export function getPositionColor(posKey: string): string {
   return "#6b7280";
 }
 
+/** Attributes that only apply to goalkeepers — hide for outfield players */
+export const GK_ATTRIBUTES = new Set([
+  "Saque con la mano",
+  "Salidas (tendencia)",
+  "Salidas",
+  "Puños",
+  "Uno contra uno",
+  "Saques de puerta",
+  "Excentricidad",
+  "Blocaje",
+  "Alcance aéreo",
+  "Mando en el área",
+  "Comunicación",
+  "Reflejos",
+  "Saques largos",
+  "Paradas",
+]);
+
+export function isGoalkeeper(positions: string[]): boolean {
+  return positions.includes("POR");
+}
+
 export function getPositionZone(posKey: string): string {
   if (posKey === "POR") return "POR";
   if (posKey.startsWith("DF") || posKey.startsWith("CR")) return "DEF";
