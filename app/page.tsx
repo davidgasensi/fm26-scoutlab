@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Header from "@/components/Header";
 import FileUploader from "@/components/FileUploader";
 import PlayerTable from "@/components/PlayerTable";
@@ -9,7 +9,10 @@ import SquadOverview from "@/components/SquadOverview";
 import PlayerCompare from "@/components/PlayerCompare";
 import PlayerFitView from "@/components/PlayerFitView";
 import { parseCSV } from "@/lib/csvParser";
+import { parseHTML } from "@/lib/htmlParser";
 import { calculateAllPlayers } from "@/lib/calculator";
+import { ALL_ROLES } from "@/lib/roles";
+import { ALL_ROLES_FM24 } from "@/lib/roles-fm24";
 import { PlayerWithScores } from "@/lib/types";
 
 type Tab = "analysis" | "squad" | "compare" | "tactics" | "fit";
@@ -17,10 +20,19 @@ type Tab = "analysis" | "squad" | "compare" | "tactics" | "fit";
 export default function Home() {
   const [results, setResults] = useState<PlayerWithScores[] | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("analysis");
+  const [gameVersion, setGameVersion] = useState<"FM26" | "FM24" | null>(null);
 
-  const handleFileLoaded = useCallback((csvText: string) => {
-    const players = parseCSV(csvText);
-    const scored = calculateAllPlayers(players);
+  useEffect(() => {
+    const color = gameVersion === "FM24" ? "#38bdf8" : "#00ff87";
+    document.documentElement.style.setProperty("--color-accent", color);
+  }, [gameVersion]);
+
+  const handleFileLoaded = useCallback((content: string, filename: string) => {
+    const isFm24 = filename.toLowerCase().endsWith(".html");
+    const players = isFm24 ? parseHTML(content) : parseCSV(content);
+    const roles = isFm24 ? ALL_ROLES_FM24 : ALL_ROLES;
+    const scored = calculateAllPlayers(players, roles);
+    setGameVersion(isFm24 ? "FM24" : "FM26");
     setResults(scored);
   }, []);
 
@@ -37,7 +49,7 @@ export default function Home() {
       <Header />
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-6 py-8 space-y-6">
-        <FileUploader onFileLoaded={handleFileLoaded} />
+        <FileUploader onFileLoaded={handleFileLoaded} version={gameVersion ?? undefined} />
 
         {results && (
           <>
@@ -81,10 +93,10 @@ export default function Home() {
               </svg>
             </div>
             <p className="text-[var(--color-text-secondary)] text-sm">
-              Sube un CSV de exportación de FM26 para analizar tus jugadores
+              Sube una exportación de FM26 (CSV) o FM24 (HTML) para analizar tus jugadores
             </p>
             <p className="text-[var(--color-text-muted)]/60 text-xs mt-2" style={{ fontFamily: "var(--font-mono)" }}>
-              El archivo debe usar ; como separador y contener columnas de atributos
+              FM26: separador ; · FM24: exportación HTML de la vista de jugadores
             </p>
           </div>
         )}
@@ -92,7 +104,7 @@ export default function Home() {
 
       <footer className="relative z-10 border-t border-[var(--color-border-subtle)] py-4">
         <p className="text-center text-[10px] text-[var(--color-text-muted)] tracking-wider uppercase" style={{ fontFamily: "var(--font-mono)" }}>
-          FM26 ScoutLab &mdash; Analizador de roles basado en atributos clave
+          ScoutLab &mdash; Analizador de roles FM26 &amp; FM24
         </p>
       </footer>
     </div>

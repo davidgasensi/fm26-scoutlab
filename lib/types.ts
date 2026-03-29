@@ -12,12 +12,13 @@ export interface Role {
   group: string;
   positionKeys: string[];
   keyAttributes: string[];
+  preferredAttributes?: string[];
 }
 
 export interface RoleScore {
   role: Role;
   score: number;
-  attributeValues: { name: string; value: number }[];
+  attributeValues: { name: string; value: number; isKey: boolean }[];
 }
 
 export interface PlayerWithScores {

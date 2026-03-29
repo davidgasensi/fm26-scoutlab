@@ -3,12 +3,19 @@
 import { useCallback, useState, useRef } from "react";
 
 interface FileUploaderProps {
-  onFileLoaded: (csvText: string) => void;
+  onFileLoaded: (content: string, filename: string) => void;
+  version?: "FM26" | "FM24";
 }
 
-export default function FileUploader({ onFileLoaded }: FileUploaderProps) {
+const VERSION_COLOR: Record<string, string> = {
+  FM26: "#00ff87",
+  FM24: "#38bdf8",
+};
+
+export default function FileUploader({ onFileLoaded, version }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const accent = version ? VERSION_COLOR[version] : VERSION_COLOR.FM26;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
@@ -17,7 +24,7 @@ export default function FileUploader({ onFileLoaded }: FileUploaderProps) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
-        onFileLoaded(text);
+        onFileLoaded(text, file.name);
       };
       reader.readAsText(file, "utf-8");
     },
@@ -29,7 +36,7 @@ export default function FileUploader({ onFileLoaded }: FileUploaderProps) {
       e.preventDefault();
       setIsDragging(false);
       const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith(".csv")) {
+      if (file && (file.name.endsWith(".csv") || file.name.endsWith(".html"))) {
         handleFile(file);
       }
     },
@@ -46,15 +53,12 @@ export default function FileUploader({ onFileLoaded }: FileUploaderProps) {
 
   return (
     <div
-      className={`
-        relative z-10 border-2 border-dashed rounded-xl p-10 text-center cursor-pointer
-        transition-all duration-300 group
-        ${
-          isDragging
-            ? "border-[var(--color-accent)] bg-[var(--color-accent)]/5 scale-[1.01]"
-            : "border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-bg-card-hover)]"
-        }
-      `}
+      className="relative z-10 border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300 group"
+      style={{
+        borderColor: isDragging ? accent : version ? `${accent}55` : "var(--color-border-subtle)",
+        background: isDragging ? `${accent}08` : "var(--color-bg-card)",
+        transform: isDragging ? "scale(1.01)" : undefined,
+      }}
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragging(true);
@@ -66,19 +70,32 @@ export default function FileUploader({ onFileLoaded }: FileUploaderProps) {
       <input
         ref={inputRef}
         type="file"
-        accept=".csv"
+        accept=".csv,.html"
         className="hidden"
         onChange={handleChange}
       />
 
+      {/* Version badge */}
+      {version && (
+        <div
+          className="absolute top-3 right-3 px-2.5 py-0.5 rounded-md text-[11px] font-bold tracking-widest"
+          style={{ fontFamily: "var(--font-mono)", background: accent, color: "#0a0e17" }}
+        >
+          {version}
+        </div>
+      )}
+
       {/* Upload icon */}
-      <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center group-hover:bg-[var(--color-accent)]/15 transition-colors">
+      <div
+        className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center transition-colors"
+        style={{ background: `${accent}18` }}
+      >
         <svg
           width="24"
           height="24"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="var(--color-accent)"
+          stroke={accent}
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -93,20 +110,20 @@ export default function FileUploader({ onFileLoaded }: FileUploaderProps) {
       {fileName ? (
         <div>
           <p
-            className="text-[var(--color-accent)] font-semibold text-sm"
-            style={{ fontFamily: "var(--font-mono)" }}
+            className="font-semibold text-sm"
+            style={{ fontFamily: "var(--font-mono)", color: accent }}
           >
             {fileName}
           </p>
           <p className="text-[var(--color-text-muted)] text-xs mt-1">
-            Arrastra otro CSV para reemplazar
+            Arrastra otro fichero para reemplazar
           </p>
         </div>
       ) : (
         <div>
           <p className="text-[var(--color-text-secondary)] font-medium text-sm">
-            Arrastra tu CSV aquí o{" "}
-            <span className="text-[var(--color-accent)] underline underline-offset-2">
+            Arrastra tu exportación aquí o{" "}
+            <span className="underline underline-offset-2" style={{ color: accent }}>
               haz clic para seleccionar
             </span>
           </p>
@@ -114,7 +131,7 @@ export default function FileUploader({ onFileLoaded }: FileUploaderProps) {
             className="text-[var(--color-text-muted)] text-xs mt-2"
             style={{ fontFamily: "var(--font-mono)" }}
           >
-            Formato: exportación FM26 (separador ;)
+            FM26: CSV (separador ;) · FM24: HTML
           </p>
         </div>
       )}

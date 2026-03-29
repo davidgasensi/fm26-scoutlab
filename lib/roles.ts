@@ -18,6 +18,7 @@ export const ALL_ROLES: Role[] = [
     group: "Portero",
     positionKeys: POS_POR,
     keyAttributes: ["Blocaje", "Alcance aéreo", "Mando en el área", "Comunicación", "Colocación", "Reflejos", "Agilidad", "Concentración"],
+    preferredAttributes: ["Saques de puerta", "Velocidad", "Decisiones", "Trabajo de equipo"],
   },
   {
     id: "portero-juego-pies",
@@ -25,6 +26,7 @@ export const ALL_ROLES: Role[] = [
     group: "Portero",
     positionKeys: POS_POR,
     keyAttributes: ["Blocaje", "Alcance aéreo", "Mando en el área", "Comunicación", "Saques de puerta", "Colocación", "Reflejos", "Agilidad"],
+    preferredAttributes: ["Velocidad", "Decisiones", "Trabajo de equipo", "Concentración"],
   },
   {
     id: "portero-sin-complicaciones",
@@ -32,6 +34,7 @@ export const ALL_ROLES: Role[] = [
     group: "Portero",
     positionKeys: POS_POR,
     keyAttributes: ["Blocaje", "Alcance aéreo", "Mando en el área", "Comunicación", "Colocación", "Reflejos", "Agilidad", "Concentración"],
+    preferredAttributes: ["Saques de puerta", "Velocidad", "Decisiones", "Trabajo de equipo"],
   },
 
   // LATERAL Y/O CARRILERO
@@ -41,6 +44,7 @@ export const ALL_ROLES: Role[] = [
     group: "Lateral / Carrilero",
     positionKeys: POS_LAT,
     keyAttributes: ["Marcaje", "Entradas", "Anticipación", "Colocación", "Trabajo de equipo", "Aceleración", "Concentración"],
+    preferredAttributes: ["Cabeceo", "Pases", "Decisiones", "Velocidad"],
   },
   {
     id: "lateral-ofensivo",
@@ -48,6 +52,7 @@ export const ALL_ROLES: Role[] = [
     group: "Lateral / Carrilero",
     positionKeys: POS_LAT,
     keyAttributes: ["Centros", "Marcaje", "Entradas", "Trabajo de equipo", "Sacrificio", "Aceleración", "Resistencia", "Velocidad"],
+    preferredAttributes: ["Técnica", "Desmarques", "Colocación"],
   },
   {
     id: "carrilero-por-dentro",
@@ -55,6 +60,7 @@ export const ALL_ROLES: Role[] = [
     group: "Lateral / Carrilero",
     positionKeys: POS_LAT,
     keyAttributes: ["Pases", "Entradas", "Anticipación", "Decisiones", "Colocación", "Trabajo de equipo", "Aceleración", "Serenidad"],
+    preferredAttributes: ["Técnica", "Visión", "Concentración"],
   },
   {
     id: "lateral-por-dentro",
@@ -62,6 +68,7 @@ export const ALL_ROLES: Role[] = [
     group: "Lateral / Carrilero",
     positionKeys: POS_LAT,
     keyAttributes: ["Cabeceo", "Marcaje", "Entradas", "Anticipación", "Colocación", "Fuerza"],
+    preferredAttributes: ["Trabajo de equipo", "Concentración", "Alcance de salto"],
   },
   {
     id: "lateral-ofensivo-creador",
@@ -69,6 +76,7 @@ export const ALL_ROLES: Role[] = [
     group: "Lateral / Carrilero",
     positionKeys: POS_LAT,
     keyAttributes: ["Pases", "Entradas", "Visión", "Decisiones", "Control", "Técnica", "Trabajo de equipo", "Aceleración"],
+    preferredAttributes: ["Centros", "Regate", "Serenidad"],
   },
   {
     id: "lateral-ofensivo-avanzado",
@@ -76,6 +84,7 @@ export const ALL_ROLES: Role[] = [
     group: "Lateral / Carrilero",
     positionKeys: POS_LAT,
     keyAttributes: ["Centros", "Regate", "Desmarques", "Técnica", "Trabajo de equipo", "Sacrificio", "Aceleración", "Resistencia"],
+    preferredAttributes: ["Velocidad", "Agilidad", "Decisiones"],
   },
 
   // DEFENSA CENTRAL
@@ -85,6 +94,7 @@ export const ALL_ROLES: Role[] = [
     group: "Defensa Central",
     positionKeys: POS_DC,
     keyAttributes: ["Cabeceo", "Marcaje", "Entradas", "Anticipación", "Colocación", "Fuerza", "Alcance de salto"],
+    preferredAttributes: ["Agresividad", "Trabajo de equipo", "Concentración"],
   },
   {
     id: "central-avanzado",
@@ -92,6 +102,7 @@ export const ALL_ROLES: Role[] = [
     group: "Defensa Central",
     positionKeys: POS_DC,
     keyAttributes: ["Cabeceo", "Marcaje", "Pases", "Entradas", "Anticipación", "Decisiones", "Colocación", "Técnica"],
+    preferredAttributes: ["Visión", "Serenidad", "Fuerza"],
   },
   {
     id: "central-con-toque",
@@ -99,6 +110,7 @@ export const ALL_ROLES: Role[] = [
     group: "Defensa Central",
     positionKeys: POS_DC,
     keyAttributes: ["Cabeceo", "Marcaje", "Pases", "Entradas", "Anticipación", "Colocación", "Fuerza", "Alcance de salto"],
+    preferredAttributes: ["Técnica", "Visión", "Decisiones"],
   },
   {
     id: "central-defensivo",
@@ -106,6 +118,7 @@ export const ALL_ROLES: Role[] = [
     group: "Defensa Central",
     positionKeys: POS_DC,
     keyAttributes: ["Cabeceo", "Marcaje", "Entradas", "Anticipación", "Colocación", "Fuerza", "Alcance de salto"],
+    preferredAttributes: ["Agresividad", "Trabajo de equipo", "Concentración"],
   },
 
   // MEDIOCENTRO
@@ -115,6 +128,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediocentro",
     positionKeys: POS_MC,
     keyAttributes: ["Entradas", "Anticipación", "Colocación", "Trabajo de equipo", "Concentración"],
+    preferredAttributes: ["Pases", "Decisiones", "Resistencia"],
   },
   {
     id: "pivote-organizador",
@@ -122,6 +136,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediocentro",
     positionKeys: POS_MC,
     keyAttributes: ["Pases", "Visión", "Decisiones", "Control", "Técnica", "Trabajo de equipo", "Serenidad"],
+    preferredAttributes: ["Entradas", "Colocación", "Anticipación"],
   },
   {
     id: "centrocampista-todoterreno",
@@ -129,6 +144,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediocentro",
     positionKeys: POS_MC,
     keyAttributes: ["Desmarques", "Pases", "Entradas", "Trabajo de equipo", "Sacrificio", "Resistencia"],
+    preferredAttributes: ["Decisiones", "Colocación", "Anticipación"],
   },
   {
     id: "medio-cierre",
@@ -136,6 +152,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediocentro",
     positionKeys: POS_MC,
     keyAttributes: ["Cabeceo", "Marcaje", "Entradas", "Anticipación", "Colocación", "Trabajo de equipo", "Fuerza", "Alcance de salto"],
+    preferredAttributes: ["Concentración", "Decisiones"],
   },
   {
     id: "organizador-todoterreno",
@@ -143,6 +160,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediocentro",
     positionKeys: POS_MC,
     keyAttributes: ["Desmarques", "Pases", "Visión", "Decisiones", "Control", "Técnica", "Trabajo de equipo", "Sacrificio"],
+    preferredAttributes: ["Resistencia", "Serenidad", "Anticipación"],
   },
 
   // CENTROCAMPISTA POR DENTRO
@@ -152,6 +170,7 @@ export const ALL_ROLES: Role[] = [
     group: "Centrocampista",
     positionKeys: POS_ME,
     keyAttributes: ["Pases", "Entradas", "Decisiones", "Control", "Trabajo de equipo"],
+    preferredAttributes: ["Técnica", "Desmarques", "Colocación"],
   },
   {
     id: "mediapunta-cm",
@@ -159,6 +178,7 @@ export const ALL_ROLES: Role[] = [
     group: "Centrocampista",
     positionKeys: POS_ME,
     keyAttributes: ["Tiros lejanos", "Desmarques", "Pases", "Control", "Técnica", "Talento", "Serenidad"],
+    preferredAttributes: ["Regate", "Visión", "Decisiones"],
   },
   {
     id: "organizador-adelantado",
@@ -166,6 +186,7 @@ export const ALL_ROLES: Role[] = [
     group: "Centrocampista",
     positionKeys: POS_ME,
     keyAttributes: ["Desmarques", "Pases", "Visión", "Decisiones", "Control", "Técnica", "Trabajo de equipo", "Serenidad"],
+    preferredAttributes: ["Regate", "Talento", "Anticipación"],
   },
   {
     id: "mediocampista-de-banda",
@@ -173,6 +194,7 @@ export const ALL_ROLES: Role[] = [
     group: "Centrocampista",
     positionKeys: POS_ME,
     keyAttributes: ["Pases", "Entradas", "Decisiones", "Control", "Trabajo de equipo"],
+    preferredAttributes: ["Centros", "Técnica", "Resistencia"],
   },
   {
     id: "centrocampista-interior",
@@ -180,6 +202,7 @@ export const ALL_ROLES: Role[] = [
     group: "Centrocampista",
     positionKeys: POS_ME,
     keyAttributes: ["Centros", "Desmarques", "Pases", "Control", "Técnica", "Sacrificio", "Aceleración", "Serenidad"],
+    preferredAttributes: ["Regate", "Decisiones", "Trabajo de equipo"],
   },
   {
     id: "centrocampista-organizador",
@@ -187,6 +210,7 @@ export const ALL_ROLES: Role[] = [
     group: "Centrocampista",
     positionKeys: POS_ME,
     keyAttributes: ["Desmarques", "Pases", "Visión", "Decisiones", "Control", "Técnica", "Trabajo de equipo", "Serenidad"],
+    preferredAttributes: ["Regate", "Talento", "Anticipación"],
   },
 
   // EXTERIORES (BANDA)
@@ -196,6 +220,7 @@ export const ALL_ROLES: Role[] = [
     group: "Exterior",
     positionKeys: POS_MP_EXT,
     keyAttributes: ["Centros", "Pases", "Decisiones", "Técnica", "Trabajo de equipo", "Sacrificio", "Resistencia", "Velocidad"],
+    preferredAttributes: ["Regate", "Desmarques", "Control"],
   },
   {
     id: "extremo",
@@ -203,6 +228,7 @@ export const ALL_ROLES: Role[] = [
     group: "Exterior",
     positionKeys: POS_MP_EXT,
     keyAttributes: ["Centros", "Regate", "Técnica", "Trabajo de equipo", "Aceleración", "Velocidad", "Agilidad"],
+    preferredAttributes: ["Desmarques", "Control", "Decisiones"],
   },
   {
     id: "extremo-organizador",
@@ -210,6 +236,7 @@ export const ALL_ROLES: Role[] = [
     group: "Exterior",
     positionKeys: POS_MP_EXT,
     keyAttributes: ["Centros", "Regate", "Desmarques", "Pases", "Visión", "Decisiones", "Control", "Técnica"],
+    preferredAttributes: ["Trabajo de equipo", "Serenidad", "Aceleración"],
   },
   {
     id: "extremo-por-dentro",
@@ -217,6 +244,7 @@ export const ALL_ROLES: Role[] = [
     group: "Exterior",
     positionKeys: POS_MP_EXT,
     keyAttributes: ["Regate", "Control", "Técnica", "Trabajo de equipo", "Aceleración", "Agilidad", "Serenidad"],
+    preferredAttributes: ["Desmarques", "Pases", "Decisiones"],
   },
   {
     id: "delantero-por-dentro",
@@ -224,6 +252,7 @@ export const ALL_ROLES: Role[] = [
     group: "Exterior",
     positionKeys: POS_MP_EXT,
     keyAttributes: ["Regate", "Desmarques", "Anticipación", "Control", "Técnica", "Aceleración", "Agilidad", "Serenidad"],
+    preferredAttributes: ["Remate", "Pases", "Decisiones"],
   },
   {
     id: "delantero-escorado",
@@ -231,6 +260,7 @@ export const ALL_ROLES: Role[] = [
     group: "Exterior",
     positionKeys: POS_MP_EXT,
     keyAttributes: ["Regate", "Desmarques", "Anticipación", "Control", "Técnica", "Aceleración", "Velocidad", "Agilidad"],
+    preferredAttributes: ["Remate", "Trabajo de equipo", "Concentración"],
   },
 
   // MEDIAPUNTA POR DENTRO
@@ -240,6 +270,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediapunta",
     positionKeys: POS_MP_C,
     keyAttributes: ["Regate", "Tiros lejanos", "Desmarques", "Pases", "Visión", "Control", "Técnica", "Talento"],
+    preferredAttributes: ["Decisiones", "Serenidad", "Aceleración"],
   },
   {
     id: "mediapunta-mp",
@@ -247,6 +278,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediapunta",
     positionKeys: POS_MP_C,
     keyAttributes: ["Tiros lejanos", "Desmarques", "Pases", "Control", "Técnica", "Talento", "Serenidad"],
+    preferredAttributes: ["Regate", "Visión", "Decisiones"],
   },
   {
     id: "organizador-adelantado-mp",
@@ -254,6 +286,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediapunta",
     positionKeys: POS_MP_C,
     keyAttributes: ["Desmarques", "Pases", "Visión", "Decisiones", "Control", "Técnica", "Trabajo de equipo", "Serenidad"],
+    preferredAttributes: ["Regate", "Talento", "Anticipación"],
   },
   {
     id: "segundo-delantero",
@@ -261,6 +294,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediapunta",
     positionKeys: POS_MP_C,
     keyAttributes: ["Remate", "Desmarques", "Anticipación", "Control", "Aceleración", "Serenidad"],
+    preferredAttributes: ["Técnica", "Decisiones", "Trabajo de equipo"],
   },
   {
     id: "centrocampista-interior-mp",
@@ -268,6 +302,7 @@ export const ALL_ROLES: Role[] = [
     group: "Mediapunta",
     positionKeys: POS_MP_C,
     keyAttributes: ["Centros", "Desmarques", "Pases", "Control", "Técnica", "Sacrificio", "Aceleración", "Serenidad"],
+    preferredAttributes: ["Regate", "Decisiones", "Trabajo de equipo"],
   },
 
   // DELANTERO CENTRO
@@ -277,6 +312,7 @@ export const ALL_ROLES: Role[] = [
     group: "Delantero",
     positionKeys: POS_DL,
     keyAttributes: ["Remate", "Desmarques", "Control", "Técnica", "Fuerza", "Serenidad"],
+    preferredAttributes: ["Cabeceo", "Pases", "Decisiones", "Trabajo de equipo"],
   },
   {
     id: "delantero-centro",
@@ -284,6 +320,7 @@ export const ALL_ROLES: Role[] = [
     group: "Delantero",
     positionKeys: POS_DL,
     keyAttributes: ["Remate", "Cabeceo", "Desmarques", "Control", "Técnica", "Aceleración", "Fuerza", "Serenidad"],
+    preferredAttributes: ["Decisiones", "Anticipación", "Trabajo de equipo"],
   },
   {
     id: "hombre-objetivo",
@@ -291,6 +328,7 @@ export const ALL_ROLES: Role[] = [
     group: "Delantero",
     positionKeys: POS_DL,
     keyAttributes: ["Remate", "Cabeceo", "Desmarques", "Fuerza", "Alcance de salto", "Equilibrio", "Valentía", "Agresividad"],
+    preferredAttributes: ["Anticipación", "Decisiones", "Trabajo de equipo"],
   },
   {
     id: "ariete",
@@ -298,6 +336,7 @@ export const ALL_ROLES: Role[] = [
     group: "Delantero",
     positionKeys: POS_DL,
     keyAttributes: ["Remate", "Cabeceo", "Desmarques", "Anticipación", "Aceleración", "Serenidad", "Concentración"],
+    preferredAttributes: ["Decisiones", "Trabajo de equipo", "Velocidad"],
   },
   {
     id: "delantero-buscaespacios",
@@ -305,6 +344,7 @@ export const ALL_ROLES: Role[] = [
     group: "Delantero",
     positionKeys: POS_DL,
     keyAttributes: ["Remate", "Cabeceo", "Desmarques", "Control", "Técnica", "Aceleración", "Fuerza", "Serenidad"],
+    preferredAttributes: ["Decisiones", "Trabajo de equipo", "Anticipación"],
   },
   {
     id: "falso-nueve",
@@ -312,5 +352,6 @@ export const ALL_ROLES: Role[] = [
     group: "Delantero",
     positionKeys: POS_DL,
     keyAttributes: ["Regate", "Desmarques", "Pases", "Visión", "Decisiones", "Control", "Técnica", "Trabajo de equipo"],
+    preferredAttributes: ["Resistencia", "Serenidad", "Anticipación"],
   },
 ];

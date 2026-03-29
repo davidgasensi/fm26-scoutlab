@@ -55,7 +55,7 @@ export default function SquadOverview({ data }: SquadOverviewProps) {
     }
     const attrAvgs = Object.entries(attrTotals)
       .map(([name, { sum, count }]) => ({ name, avg: sum / count }))
-      .filter((a) => !["Saque con la mano","Salidas (tendencia)","Puños","Uno contra uno","Saques de puerta","Excentricidad","Blocaje","Alcance aéreo","Mando en el área","Comunicación","Reflejos","Saques largos","Penaltis","Saques de esquina","Tiros libres"].includes(a.name))
+      .filter((a) => !["Saque con la mano","Salidas (tendencia)","Salidas","Puños","Uno contra uno","Saques de puerta","Excentricidad","Blocaje","Alcance aéreo","Mando en el área","Comunicación","Reflejos","Saques largos","Saques de banda","Penaltis","Paradas","Saques de esquina","Tiros libres","Córneres","Recuperación física","Liderazgo","Determinación"].includes(a.name))
       .sort((a, b) => b.avg - a.avg);
 
     const topAttrs = attrAvgs.slice(0, 5);

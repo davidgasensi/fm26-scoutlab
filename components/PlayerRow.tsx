@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PlayerWithScores } from "@/lib/types";
+import { getAttrDisplayName } from "@/lib/attributeNames";
 import PositionBadge from "./PositionBadge";
 import RoleBadge from "./RoleBadge";
 import RadarChart from "./RadarChart";
@@ -132,12 +133,14 @@ export default function PlayerRow({ data, index }: PlayerRowProps) {
                   </p>
                   <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
                     <div className="shrink-0" style={{ padding: "24px" }}>
-                      <RadarChart attributes={roleScores[0].attributeValues} size={200} />
+                      <RadarChart attributes={roleScores[0].attributeValues.filter(av => av.isKey).map(av => ({ ...av, name: getAttrDisplayName(av.name) }))} size={200} />
                     </div>
                     <div className="flex-1 space-y-1.5 w-full">
                       {roleScores[0].attributeValues.map((av) => (
                         <div key={av.name} className="flex items-center gap-2 text-xs">
-                          <span className="text-[var(--color-text-muted)] w-32 shrink-0 truncate">{av.name}</span>
+                          <span className="text-[var(--color-text-muted)] w-32 shrink-0 truncate">
+                            {getAttrDisplayName(av.name)}
+                          </span>
                           <div className="flex-1 h-1 rounded-full bg-[var(--color-bg-primary)] overflow-hidden">
                             <div className="h-full rounded-full" style={{ width: `${(av.value / 20) * 100}%`, background: getScoreColor(av.value) }} />
                           </div>
@@ -178,7 +181,7 @@ export default function PlayerRow({ data, index }: PlayerRowProps) {
                           className="flex items-center justify-between text-xs"
                         >
                           <span className="text-[var(--color-text-muted)] truncate mr-2">
-                            {av.name}
+                            {getAttrDisplayName(av.name)}
                           </span>
                           <span
                             className="font-bold tabular-nums shrink-0"
