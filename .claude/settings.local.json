@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git remote:*)",
+      "Bash(gh run:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh workflow:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(curl -s \"https://davidgasensi.github.io/fm26-scoutlab/\")",
+      "Bash(curl -s \"https://davidgasensi.github.io/fm26-scoutlab/_next/static/chunks/0hxhbk-nfcxan.js\")",
+      "Bash(firebase --version)",
+      "Bash(firebase deploy:*)",
+      "Bash(cut -d';' -f1-5)",
+      "Bash(cut -d';' -f1-3)",
+      "Bash(firebase projects:list)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:xywzteste.xyz)",
+      "Bash(curl:*)",
+      "Bash(grep -oP \"//.*|/\\\\*.*?\\\\*/\")"
+    ]
+  }
+}

@@ -12,6 +12,8 @@ import {
 } from "@/lib/firestore";
 import StatsHighlights from "./StatsHighlights";
 import StatsTable from "./StatsTable";
+import StatsScatter from "./StatsScatter";
+import StatsSeasonCompare from "./StatsSeasonCompare";
 import SaveStatsModal from "./SaveStatsModal";
 import StatsSeasonManager from "./StatsSeasonManager";
 
@@ -19,7 +21,7 @@ interface StatsSectionProps {
   user: User | null;
 }
 
-type StatsTab = "highlights" | "table";
+type StatsTab = "highlights" | "table" | "scatter" | "compare";
 
 function detectClub(players: PlayerStats[]): string {
   const counts = new Map<string, number>();
@@ -95,9 +97,11 @@ export default function StatsSection({ user }: StatsSectionProps) {
     setActiveSeasonId(id);
   }, [user, players, seasons]);
 
-  const tabs: { id: StatsTab; label: string; icon: string }[] = [
-    { id: "highlights", label: "Destacados", icon: "🏆" },
-    { id: "table",      label: "Tabla",      icon: "📊" },
+  const tabs: { id: StatsTab; label: string; icon: string; hidden?: boolean }[] = [
+    { id: "highlights", label: "Destacados",  icon: "🏆" },
+    { id: "table",      label: "Tabla",       icon: "📊" },
+    { id: "scatter",    label: "Dispersión",  icon: "✦" },
+    { id: "compare",    label: "Temporadas",  icon: "📅", hidden: !user || seasons.length < 2 },
   ];
 
   return (
@@ -205,7 +209,7 @@ export default function StatsSection({ user }: StatsSectionProps) {
 
           {/* Tab nav */}
           <div className="relative z-10 flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)]">
-            {tabs.map((tab) => (
+            {tabs.filter((t) => !t.hidden).map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -223,6 +227,8 @@ export default function StatsSection({ user }: StatsSectionProps) {
 
           {activeTab === "highlights" && <StatsHighlights players={players} />}
           {activeTab === "table"      && <StatsTable players={players} />}
+          {activeTab === "scatter"    && <StatsScatter players={players} />}
+          {activeTab === "compare"    && <StatsSeasonCompare seasons={seasons} />}
         </>
       )}
 
