@@ -17,17 +17,18 @@ export function parseCSV(csvText: string): Player[] {
       const age = isNaN(ageRaw) ? undefined : ageRaw;
       const rawPositions = (row["Posición"] || "").trim();
       const positions = parsePositions(rawPositions);
+      const club = row["Club"]?.trim() || undefined;
 
       // All remaining columns are attributes (numbers)
       const attributes: Record<string, number> = {};
       for (const [key, value] of Object.entries(row)) {
-        if (key === "Jugador" || key === "Posición" || key === "Edad") continue;
+        if (key === "Jugador" || key === "Posición" || key === "Edad" || key === "Club") continue;
         const num = parseInt(value, 10);
         if (!isNaN(num)) {
           attributes[key] = num;
         }
       }
 
-      return { name, age, rawPositions, positions, attributes };
+      return { name, age, club, rawPositions, positions, attributes };
     });
 }

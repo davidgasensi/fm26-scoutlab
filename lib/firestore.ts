@@ -14,6 +14,7 @@ import { Player } from "./types";
 export interface Squad {
   id: string;
   name: string;
+  club?: string;
   version: "FM26" | "FM24";
   createdAt: Date;
   players: Player[];
@@ -23,10 +24,12 @@ export async function saveSquad(
   uid: string,
   name: string,
   version: "FM26" | "FM24",
-  players: Player[]
+  players: Player[],
+  club?: string
 ): Promise<string> {
   const ref = await addDoc(collection(db, "users", uid, "squads"), {
     name,
+    club: club ?? null,
     version,
     createdAt: serverTimestamp(),
     players,
@@ -43,6 +46,7 @@ export async function loadSquads(uid: string): Promise<Squad[]> {
   return snap.docs.map((d) => ({
     id: d.id,
     name: d.data().name,
+    club: d.data().club ?? undefined,
     version: d.data().version,
     createdAt: d.data().createdAt?.toDate() ?? new Date(),
     players: d.data().players,

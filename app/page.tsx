@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { loadSquads, saveSquad, Squad } from "@/lib/firestore";
+import { loadSquads, saveSquad, deleteSquad, Squad } from "@/lib/firestore";
 import Header from "@/components/Header";
 import FileUploader from "@/components/FileUploader";
 import PlayerTable from "@/components/PlayerTable";
@@ -23,6 +23,19 @@ import { PlayerWithScores, Player } from "@/lib/types";
 
 type Tab = "analysis" | "squad" | "compare" | "tactics" | "fit" | "seasons";
 
+function detectClub(players: Player[]): string {
+  const counts = new Map<string, number>();
+  for (const p of players) {
+    if (p.club) counts.set(p.club, (counts.get(p.club) ?? 0) + 1);
+  }
+  let best = "";
+  let max = 0;
+  for (const [club, n] of counts) {
+    if (n > max) { max = n; best = club; }
+  }
+  return best;
+}
+
 export default function Home() {
   const [results, setResults] = useState<PlayerWithScores[] | null>(null);
   const [currentPlayers, setCurrentPlayers] = useState<Player[] | null>(null);
@@ -33,6 +46,8 @@ export default function Home() {
   // Auth & squads
   const [user, setUser] = useState<User | null>(null);
   const [squads, setSquads] = useState<Squad[]>([]);
+  const [compareIds, setCompareIds] = useState<[string, string] | null>(null);
+  const [activeSquadId, setActiveSquadId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
   useEffect(() => {
@@ -64,6 +79,7 @@ export default function Home() {
     setCurrentPlayers(players);
     setResults(scored);
     setActiveTab("analysis");
+    setActiveSquadId(null);
   }, []);
 
   const handleLoadSquad = useCallback((squad: Squad) => {
@@ -74,20 +90,28 @@ export default function Home() {
     setCurrentPlayers(squad.players);
     setResults(scored);
     setActiveTab("analysis");
+    setActiveSquadId(squad.id);
   }, []);
 
-  const handleSaveSquad = useCallback(async (name: string) => {
+  const handleSaveSquad = useCallback(async (name: string, club: string) => {
     if (!user || !currentPlayers || !currentVersion) return;
-    const id = await saveSquad(user.uid, name, currentVersion, currentPlayers);
+    // Delete existing squad with same name before overwriting
+    const existing = squads.find((s) => s.name === name);
+    if (existing) {
+      await deleteSquad(user.uid, existing.id);
+      setSquads((prev) => prev.filter((s) => s.id !== existing.id));
+    }
+    const id = await saveSquad(user.uid, name, currentVersion, currentPlayers, club || undefined);
     const newSquad: Squad = {
       id,
       name,
+      club: club || undefined,
       version: currentVersion,
       createdAt: new Date(),
       players: currentPlayers,
     };
     setSquads((prev) => [newSquad, ...prev]);
-  }, [user, currentPlayers, currentVersion]);
+  }, [user, currentPlayers, currentVersion, squads]);
 
   const handleSquadDeleted = useCallback((squadId: string) => {
     setSquads((prev) => prev.filter((s) => s.id !== squadId));
@@ -114,14 +138,28 @@ export default function Home() {
       <main className="flex-1 mx-auto w-full max-w-7xl px-6 py-8 space-y-6">
         <FileUploader onFileLoaded={handleFileLoaded} version={gameVersion ?? undefined} />
 
+        {activeSquadId && (() => {
+          const sq = squads.find((s) => s.id === activeSquadId);
+          if (!sq) return null;
+          return (
+            <div className="relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs" style={{ background: "var(--color-accent)0d", borderColor: "var(--color-accent)30", fontFamily: "var(--font-mono)" }}>
+              <div className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ background: "var(--color-accent)" }} />
+              <span className="text-[var(--color-text-muted)]">Analizando:</span>
+              <span className="font-bold" style={{ color: "var(--color-accent)" }}>{sq.name}</span>
+            </div>
+          );
+        })()}
+
         {/* Squad manager — visible when logged in */}
         {user && (
           <div className="space-y-3">
             <SquadManager
               uid={user.uid}
               squads={squads}
+              activeSquadId={activeSquadId}
               onLoad={handleLoadSquad}
-              onDeleted={handleSquadDeleted}
+              onDeleted={(id) => { handleSquadDeleted(id); if (activeSquadId === id) setActiveSquadId(null); }}
+              onCompare={(idA, idB) => { setCompareIds([idA, idB]); setActiveTab("seasons"); }}
             />
           </div>
         )}
@@ -170,7 +208,7 @@ export default function Home() {
             {activeTab === "compare"  && <PlayerCompare data={results} />}
             {activeTab === "tactics"  && <TacticsView data={results} />}
             {activeTab === "fit"      && <PlayerFitView data={results} />}
-            {activeTab === "seasons"  && user && <SeasonComparison squads={squads} />}
+            {activeTab === "seasons"  && user && <SeasonComparison squads={squads} compareIds={compareIds} />}
           </>
         )}
 
@@ -187,7 +225,7 @@ export default function Home() {
                 <span>Temporadas</span>
               </button>
             </div>
-            <SeasonComparison squads={squads} />
+            <SeasonComparison squads={squads} compareIds={compareIds} />
           </>
         )}
 
@@ -221,6 +259,8 @@ export default function Home() {
 
       {showSaveModal && user && currentPlayers && (
         <SaveSquadModal
+          clubName={detectClub(currentPlayers)}
+          existingSquads={squads}
           onSave={handleSaveSquad}
           onClose={() => setShowSaveModal(false)}
         />

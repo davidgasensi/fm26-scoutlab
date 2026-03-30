@@ -230,7 +230,11 @@ export default function SquadOverview({ data }: SquadOverviewProps) {
                 {stats.mostVersatile.roleScores.filter((r) => r.score >= 12).length} roles con puntuación ≥ 12
               </p>
               <div className="space-y-1.5">
-                {stats.mostVersatile.roleScores.filter((r) => r.score >= 12).slice(0, 6).map((rs) => (
+                {stats.mostVersatile.roleScores
+                  .filter((r) => r.score >= 12)
+                  .filter((r, i, arr) => arr.findIndex((x) => x.role.name === r.role.name) === i)
+                  .slice(0, 6)
+                  .map((rs) => (
                   <div key={rs.role.id} className="flex items-center justify-between">
                     <span className="text-xs text-[var(--color-text-secondary)] truncate">{rs.role.name}</span>
                     <span className="text-xs font-bold tabular-nums ml-2 shrink-0" style={{ fontFamily: "var(--font-mono)", color: getScoreColor(rs.score) }}>

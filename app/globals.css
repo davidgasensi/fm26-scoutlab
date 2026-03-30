@@ -111,6 +111,15 @@ body::after {
   animation: expandDown 0.3s ease-out both;
 }
 
+/* Pointer cursor on interactive elements */
+button:not(:disabled),
+a,
+select,
+[role="button"],
+label[for] {
+  cursor: pointer !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

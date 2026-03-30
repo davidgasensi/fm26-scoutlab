@@ -1,22 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { Squad } from "@/lib/firestore";
 
 interface SaveSquadModalProps {
-  onSave: (name: string) => Promise<void>;
+  clubName: string;
+  existingSquads: Squad[];
+  onSave: (name: string, club: string) => Promise<void>;
   onClose: () => void;
 }
 
-export default function SaveSquadModal({ onSave, onClose }: SaveSquadModalProps) {
-  const [name, setName] = useState("");
+export default function SaveSquadModal({ clubName, existingSquads, onSave, onClose }: SaveSquadModalProps) {
+  const [year, setYear] = useState("");
+  const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const isValid = /^\d{4}$/.test(year);
+  const fullName = isValid ? `${clubName} ${year}` : "";
+  const duplicate = isValid ? existingSquads.find((s) => s.name === fullName) : undefined;
+
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!isValid) return;
+    if (duplicate && !confirming) {
+      setConfirming(true);
+      return;
+    }
     setLoading(true);
     try {
-      await onSave(name.trim());
+      await onSave(fullName, clubName);
       setSaved(true);
       setTimeout(onClose, 1000);
     } catch (e) {
@@ -41,7 +53,7 @@ export default function SaveSquadModal({ onSave, onClose }: SaveSquadModalProps)
             Guardar equipo
           </p>
           <h3 className="text-base font-bold text-[var(--color-text-primary)] mt-1">
-            Nombra esta plantilla
+            ¿De qué temporada es?
           </h3>
         </div>
 
@@ -54,23 +66,64 @@ export default function SaveSquadModal({ onSave, onClose }: SaveSquadModalProps)
           </div>
         ) : (
           <>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
-              placeholder="Ej: FC Barcelona 2026"
-              autoFocus
-              className="w-full px-3 py-2.5 rounded-lg border text-sm text-[var(--color-text-primary)] outline-none transition-colors"
-              style={{
-                background: "var(--color-bg-primary)",
-                borderColor: "var(--color-border-subtle)",
-                fontFamily: "var(--font-mono)",
-              }}
-            />
+            {/* Club name — read only */}
+            <div className="rounded-lg border px-3 py-2.5" style={{ background: "var(--color-bg-primary)", borderColor: "var(--color-border-subtle)" }}>
+              <p className="text-[9px] uppercase tracking-widest text-[var(--color-text-muted)] mb-0.5" style={{ fontFamily: "var(--font-mono)" }}>Equipo</p>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)]">{clubName || "Sin equipo"}</p>
+            </div>
+
+            {/* Year input */}
+            <div>
+              <p className="text-[9px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1.5" style={{ fontFamily: "var(--font-mono)" }}>Temporada (año)</p>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={year}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  setYear(v);
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+                placeholder="2026"
+                autoFocus
+                maxLength={4}
+                className="w-full px-3 py-2.5 rounded-lg border text-sm text-[var(--color-text-primary)] outline-none transition-colors"
+                style={{
+                  background: "var(--color-bg-primary)",
+                  borderColor: isValid ? "var(--color-accent)" : "var(--color-border-subtle)",
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.15em",
+                }}
+              />
+              {isValid && !duplicate && (
+                <p className="text-[10px] mt-1.5" style={{ fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
+                  Se guardará como: <span className="font-bold">{fullName}</span>
+                </p>
+              )}
+            </div>
+
+            {/* Overwrite warning */}
+            {confirming && duplicate && (
+              <div
+                className="rounded-lg border px-3 py-2.5 text-xs space-y-1"
+                style={{ borderColor: "#f9731640", background: "#f9731610" }}
+              >
+                <p className="font-bold" style={{ color: "#f97316" }}>Ya existe una plantilla con ese nombre</p>
+                <p style={{ color: "var(--color-text-secondary)" }}>
+                  Se sobrescribirán los datos de <span className="font-semibold">{fullName}</span>. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            )}
+
+            {!confirming && duplicate && isValid && (
+              <p className="text-[10px]" style={{ fontFamily: "var(--font-mono)", color: "#f97316" }}>
+                Ya existe una plantilla guardada como <span className="font-bold">{fullName}</span>
+              </p>
+            )}
+
             <div className="flex gap-2 pt-1">
               <button
-                onClick={onClose}
+                onClick={() => { if (confirming) { setConfirming(false); } else { onClose(); } }}
                 className="flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors"
                 style={{
                   borderColor: "var(--color-border-subtle)",
@@ -78,18 +131,18 @@ export default function SaveSquadModal({ onSave, onClose }: SaveSquadModalProps)
                   background: "transparent",
                 }}
               >
-                Cancelar
+                {confirming ? "Atrás" : "Cancelar"}
               </button>
               <button
                 onClick={handleSave}
-                disabled={!name.trim() || loading}
+                disabled={!isValid || loading}
                 className="flex-1 py-2 rounded-lg text-sm font-bold transition-all"
                 style={{
-                  background: name.trim() ? "var(--color-accent)" : "var(--color-bg-primary)",
-                  color: name.trim() ? "#0a0e17" : "var(--color-text-muted)",
+                  background: isValid ? (confirming ? "#f97316" : "var(--color-accent)") : "var(--color-bg-primary)",
+                  color: isValid ? "#0a0e17" : "var(--color-text-muted)",
                 }}
               >
-                {loading ? "Guardando..." : "Guardar"}
+                {loading ? "Guardando..." : confirming ? "Sobrescribir" : "Guardar"}
               </button>
             </div>
           </>

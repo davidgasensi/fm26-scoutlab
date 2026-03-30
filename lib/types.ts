@@ -1,6 +1,7 @@
 export interface Player {
   name: string;
   age?: number;
+  club?: string;
   rawPositions: string;
   positions: string[];
   attributes: Record<string, number>;
