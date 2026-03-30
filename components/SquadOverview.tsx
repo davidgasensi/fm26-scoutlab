@@ -1,12 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PlayerWithScores } from "@/lib/types";
 import { getPositionZone } from "@/lib/positions";
 
 interface SquadOverviewProps {
   data: PlayerWithScores[];
 }
+
+const FIELD_DEPTH: ({ label: string; posKey: string } | null)[][] = [
+  [null,                              { label: "DL(C)", posKey: "DL-C" }, null                             ],
+  [{ label: "MP(I)", posKey: "MP-I" }, { label: "MP(C)", posKey: "MP-C" }, { label: "MP(D)", posKey: "MP-D" }],
+  [{ label: "ME(I)", posKey: "ME-I" }, { label: "ME(C)", posKey: "ME-C" }, { label: "ME(D)", posKey: "ME-D" }],
+  [{ label: "CR(I)", posKey: "CR-I" }, { label: "MC",    posKey: "MC"   }, { label: "CR(D)", posKey: "CR-D" }],
+  [{ label: "DF(I)", posKey: "DF-I" }, { label: "DF(C)", posKey: "DF-C" }, { label: "DF(D)", posKey: "DF-D" }],
+  [null,                              { label: "POR",   posKey: "POR"  }, null                             ],
+];
 
 const ZONE_META = {
   POR: { label: "Portería",  color: "#ff6b35", icon: "🧤" },
@@ -21,6 +30,119 @@ function getScoreColor(s: number) {
   if (s >= 10) return "#eab308";
   if (s >= 7)  return "#f97316";
   return "#ef4444";
+}
+
+function SquadDepth({ data }: { data: PlayerWithScores[] }) {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+
+  const playersByPosKey = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const row of FIELD_DEPTH) {
+      for (const cell of row) {
+        if (!cell) continue;
+        const names = data
+          .filter((p) => p.player.positions.includes(cell.posKey))
+          .map((p) => p.player.name);
+        map.set(cell.posKey, names);
+      }
+    }
+    return map;
+  }, [data]);
+
+  const getDepthColor = (count: number) => {
+    if (count === 0) return "#ef4444";
+    if (count === 1) return "#eab308";
+    return "var(--color-accent)";
+  };
+
+  return (
+    <div className="rounded-xl border p-4" style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)" }}>
+      <p className="text-[10px] uppercase tracking-widest font-bold mb-4" style={{ fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
+        Profundidad de plantilla
+      </p>
+
+      <div
+        className="rounded-xl overflow-hidden border border-[var(--color-border-subtle)] p-4 relative"
+        style={{ background: "linear-gradient(180deg, #0d2818 0%, #0a1f12 50%, #0d2818 100%)" }}
+      >
+        {/* Field lines */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <rect x="2" y="2" width="96" height="96" fill="none" stroke="#ffffff0d" strokeWidth="0.5" />
+          <line x1="2" y1="50" x2="98" y2="50" stroke="#ffffff0d" strokeWidth="0.5" />
+          <circle cx="50" cy="50" r="12" fill="none" stroke="#ffffff0d" strokeWidth="0.5" />
+          <rect x="24" y="2" width="52" height="16" fill="none" stroke="#ffffff0d" strokeWidth="0.5" />
+          <rect x="24" y="82" width="52" height="16" fill="none" stroke="#ffffff0d" strokeWidth="0.5" />
+        </svg>
+
+        <div className="relative z-10 flex flex-col gap-3 py-2">
+          {FIELD_DEPTH.map((row, ri) => {
+            const showBelow = ri < 3;
+            return (
+              <div key={ri} className="flex justify-center gap-4">
+                {row.map((cell, ci) => {
+                  if (!cell) return <div key={ci} className="w-16 h-14" />;
+                  const players = playersByPosKey.get(cell.posKey) ?? [];
+                  const count = players.length;
+                  const color = getDepthColor(count);
+                  const isHovered = hoveredKey === cell.posKey;
+                  return (
+                    <div
+                      key={ci}
+                      className="relative w-16 h-14 rounded-lg flex flex-col items-center justify-center border transition-all cursor-default"
+                      style={{
+                        background: `${color}18`,
+                        borderColor: isHovered ? color : `${color}50`,
+                        boxShadow: isHovered ? `0 0 14px ${color}50` : "none",
+                      }}
+                      onMouseEnter={() => setHoveredKey(cell.posKey)}
+                      onMouseLeave={() => setHoveredKey(null)}
+                    >
+                      <span className="text-[9px] font-bold" style={{ fontFamily: "var(--font-mono)", color }}>{cell.label}</span>
+                      <span className="text-lg font-bold tabular-nums leading-tight" style={{ fontFamily: "var(--font-mono)", color }}>{count}</span>
+
+                      {/* Tooltip */}
+                      {isHovered && (
+                        <div
+                          className="absolute left-1/2 -translate-x-1/2 z-30 rounded-lg border px-3 py-2 min-w-max shadow-xl"
+                          style={{
+                            background: "var(--color-bg-card)",
+                            borderColor: "var(--color-border-subtle)",
+                            ...(showBelow ? { top: "calc(100% + 8px)" } : { bottom: "calc(100% + 8px)" }),
+                          }}
+                        >
+                          <p className="text-[9px] uppercase tracking-widest font-bold mb-1.5" style={{ fontFamily: "var(--font-mono)", color }}>
+                            {cell.label} — {count} jugador{count !== 1 ? "es" : ""}
+                          </p>
+                          {players.length > 0 ? (
+                            <div className="space-y-0.5">
+                              {players.map((name) => (
+                                <p key={name} className="text-xs text-[var(--color-text-primary)]">{name}</p>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs" style={{ color: "#ef4444" }}>Sin cobertura</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 mt-3">
+        {[{ color: "#ef4444", label: "Sin cobertura" }, { color: "#eab308", label: "1 jugador" }, { color: "var(--color-accent)", label: "2+ jugadores" }].map(({ color, label }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+            <span className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: "var(--font-mono)" }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function SquadOverview({ data }: SquadOverviewProps) {
@@ -178,6 +300,9 @@ export default function SquadOverview({ data }: SquadOverviewProps) {
           );
         })}
       </div>
+
+      {/* Squad depth */}
+      <SquadDepth data={data} />
 
       {/* Attributes + versatility */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

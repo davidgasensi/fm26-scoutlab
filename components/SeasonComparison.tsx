@@ -64,7 +64,7 @@ function defaultPair(squads: Squad[]): [string, string] {
     if (!grouped.has(club)) grouped.set(club, []);
     grouped.get(club)!.push(sq);
   }
-  // Find first club with >=2 squads
+  // Find first club with ≥2 squads
   for (const [, members] of grouped) {
     if (members.length >= 2) {
       const sorted = [...members].sort((a, b) => extractYear(a) - extractYear(b));
@@ -264,7 +264,7 @@ export default function SeasonComparison({ squads, compareIds }: SeasonCompariso
             ))}
           </div>
 
-          {/* Top improvers / decliners */}
+          {/* ── Top improvers / decliners ── */}
           {(comparison.topImprovers.length > 0 || comparison.topDecliners.length > 0) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {comparison.topImprovers.length > 0 && (
@@ -302,13 +302,14 @@ export default function SeasonComparison({ squads, compareIds }: SeasonCompariso
             </div>
           )}
 
-          {/* Common players */}
+          {/* ── Common players ── */}
           {comparison.common.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-semibold" style={{ fontFamily: "var(--font-mono)" }}>
                   Jugadores en común — evolución
                 </p>
+                {/* Filter buttons */}
                 <div className="flex gap-1">
                   {filters.map(({ id, label, color }) => {
                     const active = filter === id;

@@ -9,7 +9,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Player } from "./types";
+import { Player, PlayerStats } from "./types";
 
 export interface Squad {
   id: string;
@@ -55,4 +55,48 @@ export async function loadSquads(uid: string): Promise<Squad[]> {
 
 export async function deleteSquad(uid: string, squadId: string): Promise<void> {
   await deleteDoc(doc(db, "users", uid, "squads", squadId));
+}
+
+// ── Stats seasons ────────────────────────────────────────────────────────────
+
+export interface StatsSeason {
+  id: string;
+  name: string;
+  club?: string;
+  createdAt: Date;
+  players: PlayerStats[];
+}
+
+export async function saveStatsSeason(
+  uid: string,
+  name: string,
+  players: PlayerStats[],
+  club?: string
+): Promise<string> {
+  const ref = await addDoc(collection(db, "users", uid, "statsSeasons"), {
+    name,
+    club: club ?? null,
+    createdAt: serverTimestamp(),
+    players,
+  });
+  return ref.id;
+}
+
+export async function loadStatsSeasons(uid: string): Promise<StatsSeason[]> {
+  const q = query(
+    collection(db, "users", uid, "statsSeasons"),
+    orderBy("createdAt", "desc")
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({
+    id: d.id,
+    name: d.data().name,
+    club: d.data().club ?? undefined,
+    createdAt: d.data().createdAt?.toDate() ?? new Date(),
+    players: d.data().players,
+  }));
+}
+
+export async function deleteStatsSeason(uid: string, id: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "statsSeasons", id));
 }

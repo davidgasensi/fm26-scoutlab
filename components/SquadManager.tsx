@@ -14,11 +14,12 @@ interface SquadManagerProps {
 
 export default function SquadManager({ uid, squads, activeSquadId, onLoad, onDeleted, onCompare }: SquadManagerProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [compareSelection, setCompareSelection] = useState<string[]>([]);
 
   const handleDelete = async (squadId: string) => {
-    if (!confirm("¿Eliminar este equipo?")) return;
     setDeletingId(squadId);
+    setConfirmId(null);
     try {
       await deleteSquad(uid, squadId);
       onDeleted(squadId);
@@ -105,76 +106,109 @@ export default function SquadManager({ uid, squads, activeSquadId, onLoad, onDel
                 const selIdx = compareSelection.indexOf(sq.id);
                 const isSelected = selIdx !== -1;
                 const isActive = activeSquadId === sq.id;
+                const isConfirming = confirmId === sq.id;
+                const isDeleting = deletingId === sq.id;
                 return (
                   <div
                     key={sq.id}
                     className="flex items-center gap-3 px-4 py-2.5 pl-6 transition-colors"
                     style={{
-                      background: isActive ? "var(--color-accent)0d" : isSelected ? "var(--color-accent)08" : undefined,
-                      borderLeft: isActive ? "2px solid var(--color-accent)" : "2px solid transparent",
+                      background: isConfirming ? "#ef444408" : isActive ? "var(--color-accent)0d" : isSelected ? "var(--color-accent)08" : undefined,
+                      borderLeft: isConfirming ? "2px solid #ef4444" : isActive ? "2px solid var(--color-accent)" : "2px solid transparent",
                     }}
                   >
-                    {/* Compare toggle */}
-                    <button
-                      onClick={() => toggleCompare(sq.id)}
-                      title={isSelected ? "Quitar de comparación" : "Seleccionar para comparar"}
-                      className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
-                      style={{
-                        borderColor: isSelected ? "var(--color-accent)" : "var(--color-border-subtle)",
-                        background: isSelected ? "var(--color-accent)" : "transparent",
-                      }}
-                    >
-                      {isSelected && (
-                        <span className="text-[9px] font-black leading-none" style={{ color: "#0a0e17" }}>
-                          {selIdx + 1}
-                        </span>
-                      )}
-                    </button>
+                    {isConfirming ? (
+                      <>
+                        <p className="flex-1 text-xs font-semibold" style={{ color: "#ef4444", fontFamily: "var(--font-mono)" }}>
+                          ¿Eliminar <span className="font-bold">{sq.name}</span>?
+                        </p>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => setConfirmId(null)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors"
+                            style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-muted)", background: "transparent", fontFamily: "var(--font-mono)" }}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => handleDelete(sq.id)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors"
+                            style={{ background: "#ef4444", color: "#fff", fontFamily: "var(--font-mono)" }}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Compare toggle */}
+                        <button
+                          onClick={() => toggleCompare(sq.id)}
+                          title={isSelected ? "Quitar de comparación" : "Seleccionar para comparar"}
+                          className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
+                          style={{
+                            borderColor: isSelected ? "var(--color-accent)" : "var(--color-border-subtle)",
+                            background: isSelected ? "var(--color-accent)" : "transparent",
+                          }}
+                        >
+                          {isSelected && (
+                            <span className="text-[9px] font-black leading-none" style={{ color: "#0a0e17" }}>
+                              {selIdx + 1}
+                            </span>
+                          )}
+                        </button>
 
-                    <div
-                      className="flex-1 min-w-0 flex items-center gap-3 cursor-pointer"
-                      onClick={() => onLoad(sq)}
-                    >
-                      {year
-                        ? <span className="text-sm font-bold tabular-nums shrink-0" style={{ fontFamily: "var(--font-mono)", color: isActive ? "var(--color-accent)" : "var(--color-text-primary)" }}>{year}</span>
-                        : <p className="text-sm font-semibold truncate" style={{ color: isActive ? "var(--color-accent)" : "var(--color-text-primary)" }}>{sq.name}</p>
-                      }
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: sq.version === "FM24" ? "#38bdf820" : "#00ff8720", color: sq.version === "FM24" ? "#38bdf8" : "#00ff87", fontFamily: "var(--font-mono)" }}>
-                          {sq.version}
-                        </span>
-                        <span className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: "var(--font-mono)" }}>{sq.players.length} jug.</span>
-                      </div>
-                    </div>
+                        <div
+                          className="flex-1 min-w-0 flex items-center gap-3 cursor-pointer"
+                          onClick={() => onLoad(sq)}
+                        >
+                          {year
+                            ? <span className="text-sm font-bold tabular-nums shrink-0" style={{ fontFamily: "var(--font-mono)", color: isActive ? "var(--color-accent)" : "var(--color-text-primary)" }}>{year}</span>
+                            : <p className="text-sm font-semibold truncate" style={{ color: isActive ? "var(--color-accent)" : "var(--color-text-primary)" }}>{sq.name}</p>
+                          }
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: sq.version === "FM24" ? "#38bdf820" : "#00ff8720", color: sq.version === "FM24" ? "#38bdf8" : "#00ff87", fontFamily: "var(--font-mono)" }}>
+                              {sq.version}
+                            </span>
+                            <span className="text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: "var(--font-mono)" }}>{sq.players.length} jug.</span>
+                          </div>
+                        </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={() => onLoad(sq)}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors"
-                        style={{
-                          background: isActive ? "transparent" : "var(--color-accent)",
-                          color: isActive ? "var(--color-accent)" : "#0a0e17",
-                          fontFamily: "var(--font-mono)",
-                          border: isActive ? "1px solid var(--color-accent)" : "none",
-                        }}
-                      >
-                        {isActive ? "Activo" : "Analizar"}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(sq.id)}
-                        disabled={deletingId === sq.id}
-                        className="p-1 rounded-lg transition-colors"
-                        style={{ color: "var(--color-text-muted)" }}
-                        title="Eliminar"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                          <path d="M10 11v6M14 11v6" />
-                          <path d="M9 6V4h6v2" />
-                        </svg>
-                      </button>
-                    </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => onLoad(sq)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors"
+                            style={{
+                              background: isActive ? "transparent" : "var(--color-accent)",
+                              color: isActive ? "var(--color-accent)" : "#0a0e17",
+                              fontFamily: "var(--font-mono)",
+                              border: isActive ? "1px solid var(--color-accent)" : "none",
+                            }}
+                          >
+                            {isActive ? "Activo" : "Analizar"}
+                          </button>
+                          <button
+                            onClick={() => setConfirmId(sq.id)}
+                            disabled={isDeleting}
+                            className="p-1 rounded-lg transition-colors hover:text-red-400"
+                            style={{ color: "var(--color-text-muted)" }}
+                            title="Eliminar"
+                          >
+                            {isDeleting
+                              ? <span className="text-[10px]" style={{ fontFamily: "var(--font-mono)" }}>...</span>
+                              : (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6M14 11v6" />
+                                  <path d="M9 6V4h6v2" />
+                                </svg>
+                              )
+                            }
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}

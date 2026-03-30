@@ -13,11 +13,16 @@ export default function AuthButton({ user }: AuthButtonProps) {
 
   const handleSignIn = async () => {
     setLoading(true);
+    const onFocus = () => setLoading(false);
+    window.addEventListener("focus", onFocus, { once: true });
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      if (e?.code !== "auth/popup-closed-by-user" && e?.code !== "auth/cancelled-popup-request") {
+        console.error(e);
+      }
     } finally {
+      window.removeEventListener("focus", onFocus);
       setLoading(false);
     }
   };

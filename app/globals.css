@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* ── Light theme overrides ── */
+[data-theme="light"] {
+  --color-bg-primary: #f8fafc;
+  --color-bg-secondary: #f1f5f9;
+  --color-bg-card: #ffffff;
+  --color-bg-card-hover: #f1f5f9;
+  --color-border-subtle: #e2e8f0;
+  --color-border-glow: #00c96633;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+}
+
+[data-theme="light"] body::before {
+  opacity: 0.015;
+}
+
+[data-theme="light"] body::after {
+  opacity: 0.025;
+  background-image:
+    linear-gradient(#94a3b8 1px, transparent 1px),
+    linear-gradient(90deg, #94a3b8 1px, transparent 1px);
+}
+
 @theme {
   --color-bg-primary: #0a0e17;
   --color-bg-secondary: #111827;

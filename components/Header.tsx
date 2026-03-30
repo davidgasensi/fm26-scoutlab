@@ -2,12 +2,15 @@
 
 import { User } from "firebase/auth";
 import AuthButton from "./AuthButton";
+import ThemeToggle from "./ThemeToggle";
 
 interface HeaderProps {
   user: User | null;
+  mode: "analysis" | "stats";
+  onModeChange: (mode: "analysis" | "stats") => void;
 }
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, mode, onModeChange }: HeaderProps) {
   return (
     <header className="relative z-10 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-secondary)]/80 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-6 py-5 flex items-center gap-4">
@@ -45,6 +48,24 @@ export default function Header({ user }: HeaderProps) {
             Analizador de roles
           </p>
         </div>
+        {/* Mode switcher */}
+        <div className="flex gap-1 p-1 rounded-lg border" style={{ background: "var(--color-bg-primary)", borderColor: "var(--color-border-subtle)" }}>
+          {(["analysis", "stats"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => onModeChange(m)}
+              className="px-3 py-1.5 rounded-md text-[11px] font-bold tracking-wide transition-all"
+              style={{
+                fontFamily: "var(--font-mono)",
+                background: mode === m ? "var(--color-accent)" : "transparent",
+                color: mode === m ? "#0a0e17" : "var(--color-text-muted)",
+              }}
+            >
+              {m === "analysis" ? "Análisis" : "Estadísticas"}
+            </button>
+          ))}
+        </div>
+        <ThemeToggle />
         <AuthButton user={user} />
       </div>
     </header>

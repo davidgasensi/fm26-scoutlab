@@ -14,6 +14,7 @@ import PlayerFitView from "@/components/PlayerFitView";
 import SquadManager from "@/components/SquadManager";
 import SaveSquadModal from "@/components/SaveSquadModal";
 import SeasonComparison from "@/components/SeasonComparison";
+import StatsSection from "@/components/StatsSection";
 import { parseCSV } from "@/lib/csvParser";
 import { parseHTML } from "@/lib/htmlParser";
 import { calculateAllPlayers } from "@/lib/calculator";
@@ -49,6 +50,7 @@ export default function Home() {
   const [compareIds, setCompareIds] = useState<[string, string] | null>(null);
   const [activeSquadId, setActiveSquadId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [mode, setMode] = useState<"analysis" | "stats">("analysis");
 
   useEffect(() => {
     const color = gameVersion === "FM24" ? "#38bdf8" : "#00ff87";
@@ -133,9 +135,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={user} />
+      <Header user={user} mode={mode} onModeChange={setMode} />
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-6 py-8 space-y-6">
+        {mode === "stats" && <StatsSection user={user} />}
+        {mode === "analysis" && (<>
         <FileUploader onFileLoaded={handleFileLoaded} version={gameVersion ?? undefined} />
 
         {activeSquadId && (() => {
@@ -249,6 +253,7 @@ export default function Home() {
             </p>
           </div>
         )}
+        </>)}
       </main>
 
       <footer className="relative z-10 border-t border-[var(--color-border-subtle)] py-4">

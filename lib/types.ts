@@ -26,3 +26,37 @@ export interface PlayerWithScores {
   player: Player;
   roleScores: RoleScore[];
 }
+
+export interface PlayerStats {
+  name: string;
+  club?: string;
+  age?: number;
+  position?: string;
+  minutes: number;
+  starts: number;
+  rating: number;
+  goals: number;
+  assists: number;
+  xG: number;
+  xA: number;
+  shots: number;
+  shotsOnTarget: number;
+  keyPasses: number;
+  dribbles: number;
+  passAtt: number;
+  passCom: number;
+  passRatio: number;
+  tackleAtt: number;
+  tackleCom: number;
+  clearances: number;
+  pressureAtt: number;
+  pressureCom: number;
+  saves: number;
+  goalsConceded: number;
+  cleanSheets: number;
+  yellowCards: number;
+  redCards: number;
+  distance: number;
+  headers: number;
+  raw: Record<string, string | number>;
+}

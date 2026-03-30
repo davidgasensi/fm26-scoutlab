@@ -10,7 +10,7 @@ export interface SlotAssignment {
   score: number;
 }
 
-function getBestScoreForSlot(
+export function getBestScoreForSlot(
   player: PlayerWithScores,
   slot: FormationSlot
 ): { score: number; roleScore: RoleScore | null } {
