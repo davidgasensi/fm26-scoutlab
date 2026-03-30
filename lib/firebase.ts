@@ -11,8 +11,15 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const app =
+  typeof window !== "undefined"
+    ? getApps().length
+      ? getApps()[0]
+      : initializeApp(firebaseConfig)
+    : null!;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const auth: ReturnType<typeof getAuth> =
+  typeof window !== "undefined" ? getAuth(app) : null!;
+export const db: ReturnType<typeof getFirestore> =
+  typeof window !== "undefined" ? getFirestore(app) : null!;
 export const googleProvider = new GoogleAuthProvider();
