@@ -47,6 +47,7 @@ export default function Home() {
   // Auth & squads
   const [user, setUser] = useState<User | null>(null);
   const [squads, setSquads] = useState<Squad[]>([]);
+  const [loadingSquads, setLoadingSquads] = useState(false);
   const [compareIds, setCompareIds] = useState<[string, string] | null>(null);
   const [activeSquadId, setActiveSquadId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -61,10 +62,13 @@ export default function Home() {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
+        setLoadingSquads(true);
         const loaded = await loadSquads(u.uid);
         setSquads(loaded);
+        setLoadingSquads(false);
       } else {
         setSquads([]);
+        setLoadingSquads(false);
       }
     });
     return unsub;
@@ -160,6 +164,7 @@ export default function Home() {
             <SquadManager
               uid={user.uid}
               squads={squads}
+              loading={loadingSquads}
               activeSquadId={activeSquadId}
               onLoad={handleLoadSquad}
               onDeleted={(id) => { handleSquadDeleted(id); if (activeSquadId === id) setActiveSquadId(null); }}

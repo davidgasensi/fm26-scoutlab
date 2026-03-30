@@ -6,13 +6,35 @@ import { Squad, deleteSquad } from "@/lib/firestore";
 interface SquadManagerProps {
   uid: string;
   squads: Squad[];
+  loading?: boolean;
   activeSquadId?: string | null;
   onLoad: (squad: Squad) => void;
   onDeleted: (squadId: string) => void;
   onCompare: (idA: string, idB: string) => void;
 }
 
-export default function SquadManager({ uid, squads, activeSquadId, onLoad, onDeleted, onCompare }: SquadManagerProps) {
+function LoadingSkeleton({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)" }}>
+      <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderColor: "var(--color-border-subtle)" }}>
+        <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--color-accent)" }} />
+        <p className="text-[10px] uppercase tracking-widest font-bold text-[var(--color-accent)]" style={{ fontFamily: "var(--font-mono)" }}>
+          {label}
+        </p>
+      </div>
+      <div className="divide-y divide-[var(--color-border-subtle)]">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="px-4 py-3 flex items-center gap-3">
+            <div className="h-3 rounded animate-pulse flex-1" style={{ background: "var(--color-border-subtle)", opacity: 1 - i * 0.2 }} />
+            <div className="h-6 w-14 rounded animate-pulse" style={{ background: "var(--color-border-subtle)" }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function SquadManager({ uid, squads, loading, activeSquadId, onLoad, onDeleted, onCompare }: SquadManagerProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [compareSelection, setCompareSelection] = useState<string[]>([]);
@@ -49,6 +71,10 @@ export default function SquadManager({ uid, squads, activeSquadId, onLoad, onDel
     const last = parts[parts.length - 1];
     return /^\d{4}$/.test(last) ? last : null;
   };
+
+  if (loading) {
+    return <LoadingSkeleton label="Cargando equipos..." />;
+  }
 
   if (!squads.length) {
     return (

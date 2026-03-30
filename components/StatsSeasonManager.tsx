@@ -6,6 +6,7 @@ import { StatsSeason, deleteStatsSeason } from "@/lib/firestore";
 interface StatsSeasonManagerProps {
   uid: string;
   seasons: StatsSeason[];
+  loading?: boolean;
   activeSeasonId?: string | null;
   onLoad: (season: StatsSeason) => void;
   onDeleted: (id: string) => void;
@@ -24,7 +25,7 @@ function getYear(s: StatsSeason): string | null {
   return /^\d{4}$/.test(last) ? last : null;
 }
 
-export default function StatsSeasonManager({ uid, seasons, activeSeasonId, onLoad, onDeleted }: StatsSeasonManagerProps) {
+export default function StatsSeasonManager({ uid, seasons, loading, activeSeasonId, onLoad, onDeleted }: StatsSeasonManagerProps) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -38,6 +39,27 @@ export default function StatsSeasonManager({ uid, seasons, activeSeasonId, onLoa
       setDeletingId(null);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)" }}>
+        <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderColor: "var(--color-border-subtle)" }}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--color-accent)" }} />
+          <p className="text-[10px] uppercase tracking-widest font-bold text-[var(--color-accent)]" style={{ fontFamily: "var(--font-mono)" }}>
+            Cargando estadísticas...
+          </p>
+        </div>
+        <div className="divide-y divide-[var(--color-border-subtle)]">
+          {[1, 2].map((i) => (
+            <div key={i} className="px-4 py-3 flex items-center gap-3">
+              <div className="h-3 rounded animate-pulse flex-1" style={{ background: "var(--color-border-subtle)", opacity: 1 - i * 0.3 }} />
+              <div className="h-6 w-14 rounded animate-pulse" style={{ background: "var(--color-border-subtle)" }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!seasons.length) {
     return (

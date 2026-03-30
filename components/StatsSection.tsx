@@ -43,12 +43,14 @@ export default function StatsSection({ user }: StatsSectionProps) {
   const [activeTab, setActiveTab] = useState<StatsTab>("highlights");
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [seasons, setSeasons] = useState<StatsSeason[]>([]);
+  const [loadingSeasons, setLoadingSeasons] = useState(false);
   const [activeSeasonId, setActiveSeasonId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) { setSeasons([]); return; }
-    loadStatsSeasons(user.uid).then(setSeasons);
+    setLoadingSeasons(true);
+    loadStatsSeasons(user.uid).then((s) => { setSeasons(s); setLoadingSeasons(false); });
   }, [user]);
 
   const handleFile = useCallback((file: File) => {
@@ -178,6 +180,7 @@ export default function StatsSection({ user }: StatsSectionProps) {
         <StatsSeasonManager
           uid={user.uid}
           seasons={seasons}
+          loading={loadingSeasons}
           activeSeasonId={activeSeasonId}
           onLoad={handleLoadSeason}
           onDeleted={(id) => {
