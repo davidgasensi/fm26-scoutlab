@@ -26,7 +26,7 @@ export function assignBestXI(
   players: PlayerWithScores[],
   formation: Formation
 ): SlotAssignment[] {
-  const usedNames = new Set<string>();
+  const usedIndices = new Set<number>();
   const filledSlots = new Set<string>();
   const assignments: SlotAssignment[] = [];
 
@@ -38,7 +38,7 @@ export function assignBestXI(
     for (let si = 0; si < formation.slots.length; si++) {
       if (filledSlots.has(formation.slots[si].id)) continue;
       for (let pi = 0; pi < players.length; pi++) {
-        if (usedNames.has(players[pi].player.name)) continue;
+        if (usedIndices.has(pi)) continue;
         const { score } = getBestScoreForSlot(players[pi], formation.slots[si]);
         if (score > bestScore) {
           bestScore = score;
@@ -53,7 +53,7 @@ export function assignBestXI(
       const playerData = players[bestPlayerIdx];
       const { score, roleScore } = getBestScoreForSlot(playerData, slot);
       filledSlots.add(slot.id);
-      usedNames.add(playerData.player.name);
+      usedIndices.add(bestPlayerIdx);
       assignments.push({ slot, playerData, bestRoleScore: roleScore, score });
     }
   }

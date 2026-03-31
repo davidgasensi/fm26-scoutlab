@@ -1,6 +1,7 @@
 "use client";
 
 import { RoleScore } from "@/lib/types";
+import { getScoreColor } from "@/lib/utils";
 
 interface RoleBadgeProps {
   roleScore: RoleScore;
@@ -10,14 +11,6 @@ interface RoleBadgeProps {
 export default function RoleBadge({ roleScore, rank }: RoleBadgeProps) {
   const { role, score } = roleScore;
   const percentage = (score / 20) * 100;
-
-  const getScoreColor = (s: number) => {
-    if (s >= 16) return "#00ff87";
-    if (s >= 13) return "#22c55e";
-    if (s >= 10) return "#eab308";
-    if (s >= 7) return "#f97316";
-    return "#ef4444";
-  };
 
   const color = getScoreColor(score);
 

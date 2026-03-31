@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { PlayerWithScores } from "@/lib/types";
 import { getPositionZone } from "@/lib/positions";
+import { getScoreColor } from "@/lib/utils";
 import RadarChart from "./RadarChart";
 
 interface PlayerCompareProps {
@@ -18,19 +19,12 @@ const ZONES = [
   { key: "ATA", label: "ATA", color: "#eab308" },
 ];
 
-function getScoreColor(s: number) {
-  if (s >= 16) return "#00ff87";
-  if (s >= 13) return "#22c55e";
-  if (s >= 10) return "#eab308";
-  if (s >= 7)  return "#f97316";
-  return "#ef4444";
-}
-
 export default function PlayerCompare({ data }: PlayerCompareProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [activeZone, setActiveZone] = useState<string | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [overlayMode, setOverlayMode] = useState(false);
 
   const filtered = useMemo(() => {
     return data.filter((d) => {
@@ -196,9 +190,26 @@ export default function PlayerCompare({ data }: PlayerCompareProps) {
         <>
           <div className="rounded-xl border p-4 space-y-4" style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)" }}>
             <div className="space-y-2">
-              <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-semibold" style={{ fontFamily: "var(--font-mono)" }}>
-                Comparar como rol — {availableRoles.find((r) => r.id === activeRoleId)?.name ?? "mejor rol"}
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-semibold" style={{ fontFamily: "var(--font-mono)" }}>
+                  Comparar como rol — {availableRoles.find((r) => r.id === activeRoleId)?.name ?? "mejor rol"}
+                </p>
+                <button
+                  onClick={() => setOverlayMode((v) => !v)}
+                  className="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg font-semibold transition-all border"
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    background: overlayMode ? "var(--color-accent)22" : "transparent",
+                    color: overlayMode ? "var(--color-accent)" : "var(--color-text-muted)",
+                    borderColor: overlayMode ? "var(--color-accent)50" : "var(--color-border-subtle)",
+                  }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="9" r="7" /><circle cx="15" cy="15" r="7" />
+                  </svg>
+                  Superponer
+                </button>
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {availableRoles.map((role) => {
                   const isActive = role.id === activeRoleId;
@@ -225,18 +236,45 @@ export default function PlayerCompare({ data }: PlayerCompareProps) {
             </div>
 
             <div className="border-t border-[var(--color-border-subtle)] pt-4 flex flex-wrap justify-center gap-8">
-              {playersForRole.map(({ player: p, rs }, i) => (
-                <div key={p.player.name} className="flex flex-col items-center gap-2">
+              {overlayMode ? (
+                <div className="flex flex-col items-center gap-3">
                   <div style={{ padding: "28px" }}>
-                    <RadarChart attributes={rs?.attributeValues ?? []} size={260} color={COMPARE_COLORS[i]} />
+                    <RadarChart
+                      attributes={playersForRole[0]?.rs?.attributeValues ?? []}
+                      size={300}
+                      color={COMPARE_COLORS[0]}
+                      secondaryAttributes={playersForRole[1]?.rs?.attributeValues}
+                      secondaryColor={COMPARE_COLORS[1]}
+                      tertiaryAttributes={playersForRole[2]?.rs?.attributeValues}
+                      tertiaryColor={COMPARE_COLORS[2]}
+                    />
                   </div>
-                  <p className="text-sm font-bold text-center" style={{ color: COMPARE_COLORS[i] }}>{p.player.name}</p>
-                  <p className="text-xs text-[var(--color-text-muted)] text-center">{rs?.role.name}</p>
-                  <p className="text-lg font-bold tabular-nums" style={{ fontFamily: "var(--font-mono)", color: getScoreColor(rs?.score ?? 0) }}>
-                    {rs?.score.toFixed(1)}
-                  </p>
+                  <div className="flex flex-wrap justify-center gap-4">
+                    {playersForRole.map(({ player: p, rs }, i) => (
+                      <div key={p.player.name} className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COMPARE_COLORS[i] }} />
+                        <span className="text-xs font-bold" style={{ color: COMPARE_COLORS[i] }}>{p.player.name}</span>
+                        <span className="text-xs tabular-nums" style={{ fontFamily: "var(--font-mono)", color: getScoreColor(rs?.score ?? 0) }}>
+                          {rs?.score.toFixed(1)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              ) : (
+                playersForRole.map(({ player: p, rs }, i) => (
+                  <div key={p.player.name} className="flex flex-col items-center gap-2">
+                    <div style={{ padding: "28px" }}>
+                      <RadarChart attributes={rs?.attributeValues ?? []} size={260} color={COMPARE_COLORS[i]} />
+                    </div>
+                    <p className="text-sm font-bold text-center" style={{ color: COMPARE_COLORS[i] }}>{p.player.name}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] text-center">{rs?.role.name}</p>
+                    <p className="text-lg font-bold tabular-nums" style={{ fontFamily: "var(--font-mono)", color: getScoreColor(rs?.score ?? 0) }}>
+                      {rs?.score.toFixed(1)}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

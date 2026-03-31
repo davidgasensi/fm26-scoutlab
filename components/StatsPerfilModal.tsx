@@ -82,6 +82,7 @@ export default function StatsPerfilModal({ player, squad, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Cerrar perfil"
             className="p-1.5 rounded-lg transition-colors"
             style={{ color: "var(--color-text-muted)" }}
           >

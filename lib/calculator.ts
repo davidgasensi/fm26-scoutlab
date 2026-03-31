@@ -43,7 +43,8 @@ function scoreRole(player: Player, role: Role): RoleScore {
     totalWeight += PREFERRED_WEIGHT;
   }
 
-  const score = totalWeight > 0 ? weightedTotal / totalWeight : 0;
+  const raw = totalWeight > 0 ? weightedTotal / totalWeight : 0;
+  const score = Math.min(20, Math.max(0, raw));
 
   return { role, score, attributeValues };
 }

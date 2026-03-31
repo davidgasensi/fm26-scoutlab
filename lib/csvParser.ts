@@ -3,11 +3,17 @@ import { Player } from "./types";
 import { parsePositions } from "./positions";
 
 export function parseCSV(csvText: string): Player[] {
-  const result = Papa.parse<Record<string, string>>(csvText, {
-    header: true,
-    delimiter: ";",
-    skipEmptyLines: true,
-  });
+  let result: Papa.ParseResult<Record<string, string>>;
+  try {
+    result = Papa.parse<Record<string, string>>(csvText, {
+      header: true,
+      delimiter: ";",
+      skipEmptyLines: true,
+    });
+  } catch (e: any) {
+    console.error("Error al parsear CSV:", e);
+    return [];
+  }
 
   return result.data
     .filter((row) => row["Jugador"] && row["Jugador"].trim() !== "")

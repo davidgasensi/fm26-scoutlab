@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { PlayerStats } from "@/lib/types";
 import { getBadges } from "@/lib/statsBadges";
 import StatsPerfilModal from "./StatsPerfilModal";
@@ -55,13 +55,13 @@ export default function StatsTable({ players }: StatsTableProps) {
   const [per90, setPer90] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null);
 
-  const getValue = (p: PlayerStats, key: keyof PlayerStats): number => {
+  const getValue = useCallback((p: PlayerStats, key: keyof PlayerStats): number => {
     const raw = p[key] as number;
     if (per90 && PER90_KEYS.has(key) && p.minutes > 0) {
       return getPer90(raw, p.minutes);
     }
     return raw;
-  };
+  }, [per90]);
 
   const sorted = useMemo(() => {
     const filtered = players.filter((p) =>
@@ -72,13 +72,12 @@ export default function StatsTable({ players }: StatsTableProps) {
       const bv = getValue(b, sortKey);
       return sortDir === "desc" ? bv - av : av - bv;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, sortKey, sortDir, search, per90]);
+  }, [players, sortKey, sortDir, search, per90, getValue]);
 
-  const handleSort = (key: keyof PlayerStats) => {
+  const handleSort = useCallback((key: keyof PlayerStats) => {
     if (key === sortKey) setSortDir((d) => (d === "desc" ? "asc" : "desc"));
     else { setSortKey(key); setSortDir("desc"); }
-  };
+  }, [sortKey]);
 
   const getLabel = (col: typeof COLS[0]) => {
     if (per90 && PER90_KEYS.has(col.key)) return col.label + "/90";

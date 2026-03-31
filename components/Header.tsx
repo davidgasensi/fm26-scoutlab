@@ -54,7 +54,7 @@ export default function Header({ user, mode, onModeChange }: HeaderProps) {
             <button
               key={m}
               onClick={() => onModeChange(m)}
-              className="px-3 py-1.5 rounded-md text-[11px] font-bold tracking-wide transition-all"
+              className="focus-accent interactive-press px-3 py-1.5 rounded-md text-[11px] font-bold tracking-wide transition-all"
               style={{
                 fontFamily: "var(--font-mono)",
                 background: mode === m ? "var(--color-accent)" : "transparent",

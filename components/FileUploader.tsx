@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface FileUploaderProps {
   onFileLoaded: (content: string, filename: string) => void;
   version?: "FM26" | "FM24";
+  fileName?: string | null;
 }
 
 const VERSION_COLOR: Record<string, string> = {
@@ -12,15 +13,16 @@ const VERSION_COLOR: Record<string, string> = {
   FM24: "#38bdf8",
 };
 
-export default function FileUploader({ onFileLoaded, version }: FileUploaderProps) {
+export default function FileUploader({ onFileLoaded, version, fileName }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [localFileName, setLocalFileName] = useState<string | null>(null);
   const accent = version ? VERSION_COLOR[version] : VERSION_COLOR.FM26;
   const inputRef = useRef<HTMLInputElement>(null);
+  const selectedFileName = fileName !== undefined ? fileName : localFileName;
 
   const handleFile = useCallback(
     (file: File) => {
-      setFileName(file.name);
+      setLocalFileName(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
@@ -53,10 +55,16 @@ export default function FileUploader({ onFileLoaded, version }: FileUploaderProp
 
   return (
     <div
-      className="relative z-10 border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300 group"
+      className="focus-accent interactive-press relative z-10 border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300 group"
       style={{
-        borderColor: isDragging ? accent : version ? `${accent}55` : "var(--color-border-subtle)",
-        background: isDragging ? `${accent}08` : "var(--color-bg-card)",
+        borderColor: isDragging
+          ? accent
+          : version
+            ? `color-mix(in srgb, ${accent} 33%, transparent)`
+            : "var(--color-border-subtle)",
+        background: isDragging
+          ? `color-mix(in srgb, ${accent} 8%, var(--color-bg-card))`
+          : "var(--color-bg-card)",
         transform: isDragging ? "scale(1.01)" : undefined,
       }}
       onDragOver={(e) => {
@@ -88,7 +96,7 @@ export default function FileUploader({ onFileLoaded, version }: FileUploaderProp
       {/* Upload icon */}
       <div
         className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center transition-colors"
-        style={{ background: `${accent}18` }}
+        style={{ background: `color-mix(in srgb, ${accent} 18%, transparent)` }}
       >
         <svg
           width="24"
@@ -107,20 +115,28 @@ export default function FileUploader({ onFileLoaded, version }: FileUploaderProp
         </svg>
       </div>
 
-      {fileName ? (
-        <div>
+      <div className="relative min-h-[52px]">
+        <div
+          className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-200 ${
+            selectedFileName ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"
+          }`}
+        >
           <p
             className="font-semibold text-sm"
             style={{ fontFamily: "var(--font-mono)", color: accent }}
           >
-            {fileName}
+            {selectedFileName}
           </p>
           <p className="text-[var(--color-text-muted)] text-xs mt-1">
             Arrastra otro fichero para reemplazar
           </p>
         </div>
-      ) : (
-        <div>
+
+        <div
+          className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-200 ${
+            selectedFileName ? "opacity-0 translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"
+          }`}
+        >
           <p className="text-[var(--color-text-secondary)] font-medium text-sm">
             Arrastra tu exportación aquí o{" "}
             <span className="underline underline-offset-2" style={{ color: accent }}>
@@ -134,7 +150,7 @@ export default function FileUploader({ onFileLoaded, version }: FileUploaderProp
             FM26: CSV (separador ;) · FM24: HTML
           </p>
         </div>
-      )}
+      </div>
     </div>
   );
 }

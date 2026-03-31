@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { User } from "firebase/auth";
 import { PlayerStats } from "@/lib/types";
 import { parseStatsCSV } from "@/lib/statsParser";
@@ -10,6 +10,7 @@ import {
   loadStatsSeasons,
   deleteStatsSeason,
 } from "@/lib/firestore";
+import { detectClub } from "@/lib/utils";
 import StatsHighlights from "./StatsHighlights";
 import StatsTable from "./StatsTable";
 import StatsScatter from "./StatsScatter";
@@ -22,19 +23,6 @@ interface StatsSectionProps {
 }
 
 type StatsTab = "highlights" | "table" | "scatter" | "compare";
-
-function detectClub(players: PlayerStats[]): string {
-  const counts = new Map<string, number>();
-  for (const p of players) {
-    if (p.club) counts.set(p.club, (counts.get(p.club) ?? 0) + 1);
-  }
-  let best = "";
-  let max = 0;
-  for (const [club, n] of counts) {
-    if (n > max) { max = n; best = club; }
-  }
-  return best;
-}
 
 export default function StatsSection({ user }: StatsSectionProps) {
   const [players, setPlayers] = useState<PlayerStats[] | null>(null);
@@ -50,7 +38,10 @@ export default function StatsSection({ user }: StatsSectionProps) {
   useEffect(() => {
     if (!user) { setSeasons([]); return; }
     setLoadingSeasons(true);
-    loadStatsSeasons(user.uid).then((s) => { setSeasons(s); setLoadingSeasons(false); });
+    loadStatsSeasons(user.uid)
+      .then((s) => { setSeasons(s); })
+      .catch((e: any) => { console.error("Error cargando estadísticas:", e); })
+      .finally(() => { setLoadingSeasons(false); });
   }, [user]);
 
   const handleFile = useCallback((file: File) => {
@@ -82,38 +73,58 @@ export default function StatsSection({ user }: StatsSectionProps) {
 
   const handleSave = useCallback(async (name: string, club: string) => {
     if (!user || !players) return;
-    const existing = seasons.find((s) => s.name === name);
-    if (existing) {
-      await deleteStatsSeason(user.uid, existing.id);
-      setSeasons((prev) => prev.filter((s) => s.id !== existing.id));
+    try {
+      const existing = seasons.find((s) => s.name === name);
+      if (existing) {
+        await deleteStatsSeason(user.uid, existing.id);
+        setSeasons((prev) => prev.filter((s) => s.id !== existing.id));
+      }
+      const id = await saveStatsSeason(user.uid, name, players, club || undefined);
+      const newSeason: StatsSeason = {
+        id,
+        name,
+        club: club || undefined,
+        createdAt: new Date(),
+        players,
+      };
+      setSeasons((prev) => [newSeason, ...prev]);
+      setActiveSeasonId(id);
+    } catch (e: any) {
+      console.error("Error guardando estadísticas:", e);
     }
-    const id = await saveStatsSeason(user.uid, name, players, club || undefined);
-    const newSeason: StatsSeason = {
-      id,
-      name,
-      club: club || undefined,
-      createdAt: new Date(),
-      players,
-    };
-    setSeasons((prev) => [newSeason, ...prev]);
-    setActiveSeasonId(id);
   }, [user, players, seasons]);
 
-  const tabs: { id: StatsTab; label: string; icon: string; hidden?: boolean }[] = [
-    { id: "highlights", label: "Destacados",  icon: "🏆" },
-    { id: "table",      label: "Tabla",       icon: "📊" },
-    { id: "scatter",    label: "Dispersión",  icon: "✦" },
-    { id: "compare",    label: "Temporadas",  icon: "📅", hidden: !user || seasons.length < 2 },
+  const tabs: { id: StatsTab; label: string; icon: React.ReactNode; hidden?: boolean }[] = [
+    { id: "highlights", label: "Destacados", icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    )},
+    { id: "table", label: "Tabla", icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    )},
+    { id: "scatter", label: "Dispersión", icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="7" cy="17" r="1.5"/><circle cx="12" cy="9" r="1.5"/><circle cx="17" cy="14" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="19" cy="5" r="1.5"/>
+      </svg>
+    )},
+    { id: "compare", label: "Temporadas", icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    ), hidden: !user || seasons.length < 2 },
   ];
 
   return (
     <div className="space-y-6">
       {/* Uploader */}
       <div
-        className="relative z-10 border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300 group"
+        className="focus-accent interactive-press relative z-10 border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300 group"
         style={{
-          borderColor: isDragging ? "#00ff87" : fileName ? "#00ff8755" : "var(--color-border-subtle)",
-          background: isDragging ? "#00ff8708" : "var(--color-bg-card)",
+          borderColor: isDragging ? "var(--color-accent)" : fileName ? "color-mix(in srgb, var(--color-accent) 33%, transparent)" : "var(--color-border-subtle)",
+          background: isDragging ? "color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))" : "var(--color-bg-card)",
           transform: isDragging ? "scale(1.01)" : undefined,
         }}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -132,7 +143,7 @@ export default function StatsSection({ user }: StatsSectionProps) {
 
         <div
           className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center transition-colors"
-          style={{ background: "#00ff8718" }}
+          style={{ background: "color-mix(in srgb, var(--color-accent) 18%, transparent)" }}
         >
           <svg
             width="24"
@@ -151,8 +162,12 @@ export default function StatsSection({ user }: StatsSectionProps) {
           </svg>
         </div>
 
-        {fileName ? (
-          <div>
+        <div className="relative min-h-[52px]">
+          <div
+            className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-200 ${
+              fileName ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"
+            }`}
+          >
             <p className="font-semibold text-sm" style={{ fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
               {fileName}
             </p>
@@ -160,8 +175,12 @@ export default function StatsSection({ user }: StatsSectionProps) {
               Arrastra otro fichero para reemplazar
             </p>
           </div>
-        ) : (
-          <div>
+
+          <div
+            className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-200 ${
+              fileName ? "opacity-0 translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"
+            }`}
+          >
             <p className="text-[var(--color-text-secondary)] font-medium text-sm">
               Arrastra tu exportación de estadísticas aquí o{" "}
               <span className="underline underline-offset-2" style={{ color: "var(--color-accent)" }}>
@@ -172,7 +191,7 @@ export default function StatsSection({ user }: StatsSectionProps) {
               FM26: CSV de rendimiento (separador ;)
             </p>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Saved seasons manager */}
@@ -216,10 +235,10 @@ export default function StatsSection({ user }: StatsSectionProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200"
+                className="focus-accent interactive-press flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200"
                 style={{
                   background: activeTab === tab.id ? "var(--color-accent)" : "transparent",
-                  color: activeTab === tab.id ? "#0a0e17" : "var(--color-text-muted)",
+                  color: activeTab === tab.id ? "#0a0e17" : "#748191",
                 }}
               >
                 <span>{tab.icon}</span>

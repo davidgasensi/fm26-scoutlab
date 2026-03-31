@@ -17,6 +17,23 @@ export default function PlayerTable({ data }: PlayerTableProps) {
   const [activeZone, setActiveZone] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("csv");
 
+  const zoneCounts = useMemo(() => {
+    const counts: Record<string, number> = { POR: 0, DEF: 0, MED: 0, ATA: 0 };
+
+    data.forEach((d) => {
+      if (search && !d.player.name.toLowerCase().includes(search.toLowerCase())) return;
+
+      const zones = new Set(d.player.positions.map(getPositionZone));
+      zones.forEach((zone) => {
+        if (zone in counts) {
+          counts[zone] += 1;
+        }
+      });
+    });
+
+    return counts;
+  }, [data, search]);
+
   const filtered = useMemo(() => {
     const result = data.filter((d) => {
       if (search && !d.player.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -45,6 +62,7 @@ export default function PlayerTable({ data }: PlayerTableProps) {
         onSearchChange={setSearch}
         activeZone={activeZone}
         onZoneChange={setActiveZone}
+        zoneCounts={zoneCounts}
       />
 
       {/* Results count + sort toggle */}
@@ -60,7 +78,7 @@ export default function PlayerTable({ data }: PlayerTableProps) {
           {(search || activeZone) && (
             <button
               onClick={() => { setSearch(""); setActiveZone(null); }}
-              className="text-xs text-[var(--color-accent)] hover:underline"
+              className="focus-accent interactive-press text-xs text-[var(--color-accent)] hover:underline rounded-md px-1.5 py-0.5"
               style={{ fontFamily: "var(--font-mono)" }}
             >
               Limpiar filtros
@@ -74,7 +92,7 @@ export default function PlayerTable({ data }: PlayerTableProps) {
           >
             <button
               onClick={() => setSortMode("csv")}
-              className="px-3 py-1.5 transition-colors"
+              className="focus-accent interactive-press px-3 py-1.5 transition-colors"
               style={{
                 backgroundColor: sortMode === "csv" ? "var(--color-accent)" : "var(--color-bg-card)",
                 color: sortMode === "csv" ? "#0a0e17" : "var(--color-text-muted)",
@@ -85,7 +103,7 @@ export default function PlayerTable({ data }: PlayerTableProps) {
             </button>
             <button
               onClick={() => setSortMode("ranking")}
-              className="px-3 py-1.5 transition-colors flex items-center gap-1.5"
+              className="focus-accent interactive-press px-3 py-1.5 transition-colors flex items-center gap-1.5"
               style={{
                 backgroundColor: sortMode === "ranking" ? "var(--color-accent)" : "var(--color-bg-card)",
                 color: sortMode === "ranking" ? "#0a0e17" : "var(--color-text-muted)",
@@ -105,7 +123,7 @@ export default function PlayerTable({ data }: PlayerTableProps) {
       {/* Player list */}
       <div className="space-y-2">
         {filtered.map((d, i) => (
-          <PlayerRow key={d.player.name} data={d} index={i} />
+          <PlayerRow key={`${i}-${d.player.name}`} data={d} index={i} />
         ))}
       </div>
 

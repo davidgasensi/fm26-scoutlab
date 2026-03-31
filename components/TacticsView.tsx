@@ -10,17 +10,11 @@ import {
   SlotAssignment,
   TacticInstruction,
 } from "@/lib/tactics";
+import { getScoreColor } from "@/lib/utils";
+import { FormationSlot } from "@/lib/formations";
 
 interface TacticsViewProps {
   data: PlayerWithScores[];
-}
-
-function getScoreColor(s: number): string {
-  if (s >= 16) return "#00ff87";
-  if (s >= 13) return "#22c55e";
-  if (s >= 10) return "#eab308";
-  if (s >= 7) return "#f97316";
-  return "#ef4444";
 }
 
 // ─── INSTRUCTION ROW ─────────────────────────────────────────────────────────
@@ -68,8 +62,9 @@ function InstructionRow({ instr }: { instr: TacticInstruction }) {
 
 // ─── FIELD CANVAS ─────────────────────────────────────────────────────────────
 
-function FieldCanvas({ assignments }: { assignments: SlotAssignment[] }) {
+function FieldCanvas({ assignments, slots }: { assignments: SlotAssignment[]; slots: FormationSlot[] }) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const assignedSlotIds = new Set(assignments.map((a) => a.slot.id));
 
   return (
     <div
@@ -89,6 +84,24 @@ function FieldCanvas({ assignments }: { assignments: SlotAssignment[] }) {
         <circle cx="50" cy="18" r="0.8" fill="#ffffff0d" />
         <circle cx="50" cy="136" r="0.8" fill="#ffffff0d" />
       </svg>
+
+      {/* Empty slots — rendered first so filled slots appear on top */}
+      {slots.filter((s) => !assignedSlotIds.has(s.id)).map((s) => (
+        <div
+          key={`empty-${s.id}`}
+          className="absolute"
+          style={{ left: `${s.x * 100}%`, top: `${s.y * 100}%`, transform: "translate(-50%, -50%)", zIndex: 5 }}
+        >
+          <div className="relative w-12 h-12 rounded-full flex items-center justify-center border-2" style={{ background: "#1a1f2eaa", borderColor: "#ffffff22", borderStyle: "dashed" }}>
+            <span className="text-[9px] font-bold text-center leading-tight select-none" style={{ color: "#ffffff33", fontFamily: "var(--font-mono)" }}>
+              {s.label}
+            </span>
+          </div>
+          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] tabular-nums px-1 whitespace-nowrap" style={{ color: "#ffffff22", fontFamily: "var(--font-mono)" }}>
+            —
+          </div>
+        </div>
+      ))}
 
       {assignments.map((a) => {
         const name = a.playerData.player.name;
@@ -225,7 +238,7 @@ export default function TacticsView({ data }: TacticsViewProps) {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Field */}
           <div className="lg:col-span-2">
-            <FieldCanvas assignments={activeAssignments} />
+            <FieldCanvas assignments={activeAssignments} slots={formation.slots} />
           </div>
 
           {/* Player list */}

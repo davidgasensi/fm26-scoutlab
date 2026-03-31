@@ -54,6 +54,7 @@ function cellBg(val: number): string {
 export default function HeatmapView({ data }: HeatmapViewProps) {
   const [activeZone, setActiveZone] = useState("ALL");
   const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
 
   const filtered = useMemo(() => {
     if (activeZone === "ALL") return data;
@@ -64,10 +65,21 @@ export default function HeatmapView({ data }: HeatmapViewProps) {
 
   const sorted = useMemo(() => {
     if (!sortBy) return filtered;
-    return [...filtered].sort((a, b) =>
-      (b.player.attributes[sortBy] ?? 0) - (a.player.attributes[sortBy] ?? 0)
-    );
-  }, [filtered, sortBy]);
+    return [...filtered].sort((a, b) => {
+      const diff = (b.player.attributes[sortBy] ?? 0) - (a.player.attributes[sortBy] ?? 0);
+      return sortDir === "desc" ? diff : -diff;
+    });
+  }, [filtered, sortBy, sortDir]);
+
+  const handleSortClick = (attr: string): void => {
+    if (sortBy !== attr) {
+      setSortBy(attr);
+      setSortDir("desc");
+      return;
+    }
+
+    setSortDir((prev) => (prev === "desc" ? "asc" : "desc"));
+  };
 
   return (
     <div className="relative z-10 space-y-4">
@@ -82,8 +94,8 @@ export default function HeatmapView({ data }: HeatmapViewProps) {
         {ZONES.map((z) => (
           <button
             key={z.key}
-            onClick={() => { setActiveZone(z.key); setSortBy(null); }}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider border transition-all"
+            onClick={() => { setActiveZone(z.key); setSortBy(null); setSortDir("desc"); }}
+            className="focus-accent interactive-press px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider border transition-all"
             style={{
               fontFamily: "var(--font-mono)",
               background: activeZone === z.key ? "var(--color-accent)" : "var(--color-bg-card)",
@@ -96,12 +108,31 @@ export default function HeatmapView({ data }: HeatmapViewProps) {
         ))}
       </div>
 
-      <div className="rounded-xl border overflow-auto" style={{ borderColor: "var(--color-border-subtle)" }}>
+      <div className="flex items-center justify-between gap-3 text-[11px]" style={{ fontFamily: "var(--font-mono)" }}>
+        <p className="text-[var(--color-text-muted)]">
+          {sortBy ? `Ordenando por ${sortBy} (${sortDir === "desc" ? "mayor a menor" : "menor a mayor"})` : "Sin orden aplicado"}
+        </p>
+        <button
+          type="button"
+          onClick={() => { setSortBy(null); setSortDir("desc"); }}
+          disabled={!sortBy}
+          className="focus-accent interactive-press px-2.5 py-1 rounded-md border disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{
+            borderColor: "var(--color-border-subtle)",
+            color: sortBy ? "var(--color-text-secondary)" : "var(--color-text-muted)",
+            background: "var(--color-bg-card)",
+          }}
+        >
+          Reset orden
+        </button>
+      </div>
+
+      <div className="rounded-xl border overflow-auto max-h-[70vh]" style={{ borderColor: "var(--color-border-subtle)" }}>
         <table className="w-full border-collapse text-xs" style={{ minWidth: `${180 + attrs.length * 44}px` }}>
           <thead>
             <tr style={{ background: "var(--color-bg-card)" }}>
               <th
-                className="sticky left-0 z-10 px-3 py-2.5 text-left font-semibold border-b border-r"
+                className="sticky top-0 left-0 z-30 px-3 py-2.5 text-left font-semibold border-b border-r"
                 style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)", color: "var(--color-text-muted)", minWidth: "160px" }}
               >
                 Jugador
@@ -109,9 +140,10 @@ export default function HeatmapView({ data }: HeatmapViewProps) {
               {attrs.map((attr) => (
                 <th
                   key={attr}
-                  onClick={() => setSortBy(sortBy === attr ? null : attr)}
-                  className="px-1 py-2 border-b border-r cursor-pointer select-none"
+                  onClick={() => handleSortClick(attr)}
+                  className="sticky top-0 z-20 px-1 py-2 border-b border-r cursor-pointer select-none"
                   style={{
+                    background: "var(--color-bg-card)",
                     borderColor: "var(--color-border-subtle)",
                     color: sortBy === attr ? "var(--color-accent)" : "var(--color-text-muted)",
                     minWidth: "40px",
@@ -132,6 +164,18 @@ export default function HeatmapView({ data }: HeatmapViewProps) {
                     >
                       {attr}
                     </span>
+                    {sortBy === attr && (
+                      <span
+                        className="ml-0.5"
+                        style={{
+                          color: "var(--color-accent)",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {sortDir === "desc" ? "▼" : "▲"}
+                      </span>
+                    )}
                   </div>
                 </th>
               ))}
@@ -182,6 +226,7 @@ export default function HeatmapView({ data }: HeatmapViewProps) {
             ))}
           </tbody>
         </table>
+
       </div>
     </div>
   );

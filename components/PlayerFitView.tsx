@@ -1,28 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PlayerWithScores } from "@/lib/types";
+import { getScoreColor, FIELD_POSITIONS } from "@/lib/utils";
 
 interface PlayerFitViewProps {
   data: PlayerWithScores[];
 }
-
-function getScoreColor(s: number) {
-  if (s >= 16) return "#00ff87";
-  if (s >= 13) return "#22c55e";
-  if (s >= 10) return "#eab308";
-  if (s >= 7)  return "#f97316";
-  return "#ef4444";
-}
-
-const FIELD_POSITIONS: ({ label: string; posKey: string } | null)[][] = [
-  [null, { label: "DL(C)", posKey: "DL-C" }, null],
-  [{ label: "MP(I)", posKey: "MP-I" }, { label: "MP(C)", posKey: "MP-C" }, { label: "MP(D)", posKey: "MP-D" }],
-  [{ label: "ME(I)", posKey: "ME-I" }, { label: "ME(C)", posKey: "ME-C" }, { label: "ME(D)", posKey: "ME-D" }],
-  [{ label: "CR(I)", posKey: "CR-I" }, { label: "MC", posKey: "MC" }, { label: "CR(D)", posKey: "CR-D" }],
-  [{ label: "DF(I)", posKey: "DF-I" }, { label: "DF(C)", posKey: "DF-C" }, { label: "DF(D)", posKey: "DF-D" }],
-  [null, { label: "POR", posKey: "POR" }, null],
-];
 
 export default function PlayerFitView({ data }: PlayerFitViewProps) {
   const [search, setSearch] = useState("");
@@ -32,6 +16,12 @@ export default function PlayerFitView({ data }: PlayerFitViewProps) {
     () => data.filter((d) => d.player.name.toLowerCase().includes(search.toLowerCase())),
     [data, search]
   );
+
+  // CQ-3: reset selection when the dataset changes (new file uploaded)
+  useEffect(() => {
+    setSelectedName(null);
+    setSearch("");
+  }, [data]);
 
   const selected = useMemo(
     () => data.find((d) => d.player.name === selectedName) ?? null,
@@ -53,7 +43,10 @@ export default function PlayerFitView({ data }: PlayerFitViewProps) {
     return map;
   }, [selected]);
 
-  const bestPosKey = Object.entries(scoreByPosKey).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const bestPosKey = useMemo(
+    () => Object.entries(scoreByPosKey).sort((a, b) => b[1] - a[1])[0]?.[0],
+    [scoreByPosKey]
+  );
 
   return (
     <div className="relative z-10 space-y-6">

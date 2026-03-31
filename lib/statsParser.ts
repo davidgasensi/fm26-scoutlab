@@ -7,11 +7,17 @@ function num(val: string | undefined): number {
 }
 
 export function parseStatsCSV(csvText: string): PlayerStats[] {
-  const result = Papa.parse<Record<string, string>>(csvText, {
-    header: true,
-    delimiter: ";",
-    skipEmptyLines: true,
-  });
+  let result: Papa.ParseResult<Record<string, string>>;
+  try {
+    result = Papa.parse<Record<string, string>>(csvText, {
+      header: true,
+      delimiter: ";",
+      skipEmptyLines: true,
+    });
+  } catch (e: any) {
+    console.error("Error al parsear estadísticas CSV:", e);
+    return [];
+  }
 
   return result.data
     .filter((row) => row["Jugador"] && row["Jugador"].trim() !== "")

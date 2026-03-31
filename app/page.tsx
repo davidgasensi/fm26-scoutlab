@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { loadSquads, saveSquad, deleteSquad, Squad } from "@/lib/firestore";
@@ -15,27 +15,16 @@ import SquadManager from "@/components/SquadManager";
 import SaveSquadModal from "@/components/SaveSquadModal";
 import SeasonComparison from "@/components/SeasonComparison";
 import StatsSection from "@/components/StatsSection";
+import HeatmapView from "@/components/HeatmapView";
 import { parseCSV } from "@/lib/csvParser";
 import { parseHTML } from "@/lib/htmlParser";
 import { calculateAllPlayers } from "@/lib/calculator";
 import { ALL_ROLES } from "@/lib/roles";
 import { ALL_ROLES_FM24 } from "@/lib/roles-fm24";
 import { PlayerWithScores, Player } from "@/lib/types";
+import { detectClub } from "@/lib/utils";
 
-type Tab = "analysis" | "squad" | "compare" | "tactics" | "fit" | "seasons";
-
-function detectClub(players: Player[]): string {
-  const counts = new Map<string, number>();
-  for (const p of players) {
-    if (p.club) counts.set(p.club, (counts.get(p.club) ?? 0) + 1);
-  }
-  let best = "";
-  let max = 0;
-  for (const [club, n] of counts) {
-    if (n > max) { max = n; best = club; }
-  }
-  return best;
-}
+type Tab = "analysis" | "squad" | "compare" | "tactics" | "fit" | "heatmap" | "seasons";
 
 export default function Home() {
   const [results, setResults] = useState<PlayerWithScores[] | null>(null);
@@ -43,6 +32,7 @@ export default function Home() {
   const [currentVersion, setCurrentVersion] = useState<"FM26" | "FM24" | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("analysis");
   const [gameVersion, setGameVersion] = useState<"FM26" | "FM24" | null>(null);
+  const [analysisFileName, setAnalysisFileName] = useState<string | null>(null);
 
   // Auth & squads
   const [user, setUser] = useState<User | null>(null);
@@ -63,9 +53,14 @@ export default function Home() {
       setUser(u);
       if (u) {
         setLoadingSquads(true);
-        const loaded = await loadSquads(u.uid);
-        setSquads(loaded);
-        setLoadingSquads(false);
+        try {
+          const loaded = await loadSquads(u.uid);
+          setSquads(loaded);
+        } catch (e: any) {
+          console.error("Error cargando plantillas:", e);
+        } finally {
+          setLoadingSquads(false);
+        }
       } else {
         setSquads([]);
         setLoadingSquads(false);
@@ -84,6 +79,7 @@ export default function Home() {
     setCurrentVersion(version);
     setCurrentPlayers(players);
     setResults(scored);
+    setAnalysisFileName(filename);
     setActiveTab("analysis");
     setActiveSquadId(null);
   }, []);
@@ -95,41 +91,77 @@ export default function Home() {
     setCurrentVersion(squad.version);
     setCurrentPlayers(squad.players);
     setResults(scored);
+    setAnalysisFileName(null);
     setActiveTab("analysis");
     setActiveSquadId(squad.id);
   }, []);
 
   const handleSaveSquad = useCallback(async (name: string, club: string) => {
     if (!user || !currentPlayers || !currentVersion) return;
-    // Delete existing squad with same name before overwriting
-    const existing = squads.find((s) => s.name === name);
-    if (existing) {
-      await deleteSquad(user.uid, existing.id);
-      setSquads((prev) => prev.filter((s) => s.id !== existing.id));
+    try {
+      const existing = squads.find((s) => s.name === name);
+      if (existing) {
+        await deleteSquad(user.uid, existing.id);
+        setSquads((prev) => prev.filter((s) => s.id !== existing.id));
+      }
+      const id = await saveSquad(user.uid, name, currentVersion, currentPlayers, club || undefined);
+      const newSquad: Squad = {
+        id,
+        name,
+        club: club || undefined,
+        version: currentVersion,
+        createdAt: new Date(),
+        players: currentPlayers,
+      };
+      setSquads((prev) => [newSquad, ...prev]);
+    } catch (e: any) {
+      console.error("Error guardando plantilla:", e);
     }
-    const id = await saveSquad(user.uid, name, currentVersion, currentPlayers, club || undefined);
-    const newSquad: Squad = {
-      id,
-      name,
-      club: club || undefined,
-      version: currentVersion,
-      createdAt: new Date(),
-      players: currentPlayers,
-    };
-    setSquads((prev) => [newSquad, ...prev]);
   }, [user, currentPlayers, currentVersion, squads]);
 
   const handleSquadDeleted = useCallback((squadId: string) => {
     setSquads((prev) => prev.filter((s) => s.id !== squadId));
   }, []);
 
-  const tabs: { id: Tab; label: string; icon: string; requiresAuth?: boolean }[] = [
-    { id: "analysis", label: "Análisis de Roles", icon: "📊" },
-    { id: "squad",    label: "Vista de Equipo",   icon: "🏟️" },
-    { id: "compare",  label: "Comparador",         icon: "⚖️" },
-    { id: "tactics",  label: "Mejor XI & Táctica", icon: "🎯" },
-    { id: "fit",      label: "¿Dónde Encaja?",     icon: "📍" },
-    { id: "seasons",  label: "Temporadas",          icon: "📅", requiresAuth: true },
+  const tabs: { id: Tab; label: string; icon: React.ReactNode; requiresAuth?: boolean }[] = [
+    { id: "analysis", label: "Análisis de Roles", icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    )},
+    { id: "squad",    label: "Vista de Equipo", icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
+        <circle cx="17" cy="9" r="2.5"/><path d="M21 21v-1.5a3.5 3.5 0 0 0-2.5-3.36"/>
+      </svg>
+    )},
+    { id: "compare",  label: "Comparador", icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="9" cy="9" r="6"/><circle cx="15" cy="15" r="6"/>
+      </svg>
+    )},
+    { id: "tactics",  label: "Mejor XI & Táctica", icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>
+      </svg>
+    )},
+    { id: "fit",      label: "¿Dónde Encaja?", icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+      </svg>
+    )},
+    { id: "heatmap",  label: "Heatmap", icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="4" height="4" rx="1"/><rect x="10" y="3" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/>
+        <rect x="3" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/>
+        <rect x="3" y="17" width="4" height="4" rx="1"/><rect x="10" y="17" width="4" height="4" rx="1"/><rect x="17" y="17" width="4" height="4" rx="1"/>
+      </svg>
+    )},
+    { id: "seasons",  label: "Temporadas", icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    ), requiresAuth: true },
   ];
 
   const visibleTabs = tabs.filter((t) => {
@@ -142,9 +174,16 @@ export default function Home() {
       <Header user={user} mode={mode} onModeChange={setMode} />
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-6 py-8 space-y-6">
-        {mode === "stats" && <StatsSection user={user} />}
+        {/* StatsSection always mounted to preserve state when switching modes */}
+        <div hidden={mode !== "stats"}>
+          <StatsSection user={user} />
+        </div>
         {mode === "analysis" && (<>
-        <FileUploader onFileLoaded={handleFileLoaded} version={gameVersion ?? undefined} />
+        <FileUploader
+          onFileLoaded={handleFileLoaded}
+          version={gameVersion ?? undefined}
+          fileName={analysisFileName}
+        />
 
         {activeSquadId && (() => {
           const sq = squads.find((s) => s.id === activeSquadId);
@@ -194,21 +233,29 @@ export default function Home() {
             )}
 
             {/* Tab navigation */}
-            <div className="relative z-10 flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] overflow-x-auto">
+            <div className="sticky top-3 z-20">
+              <div className="relative z-10 flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)]/90 border border-[var(--color-border-subtle)] overflow-x-auto backdrop-blur-sm shadow-[0_8px_20px_rgba(0,0,0,0.16)]">
               {visibleTabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0"
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    // Limpiar compareIds al salir del tab de temporadas
+                    if (tab.id !== "seasons") setCompareIds(null);
+                  }}
+                  className="focus-accent interactive-press flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0"
                   style={{
                     background: activeTab === tab.id ? "var(--color-accent)" : "transparent",
-                    color: activeTab === tab.id ? "#0a0e17" : "var(--color-text-muted)",
+                    color: activeTab === tab.id ? "#0a0e17" : "#748191",
+                    boxShadow: activeTab === tab.id ? "0 8px 18px rgba(0, 0, 0, 0.2)" : "none",
+                    transform: activeTab === tab.id ? "translateY(-1px)" : "none",
                   }}
                 >
                   <span>{tab.icon}</span>
                   <span>{tab.label}</span>
                 </button>
               ))}
+              </div>
             </div>
 
             {/* Tab content */}
@@ -217,6 +264,7 @@ export default function Home() {
             {activeTab === "compare"  && <PlayerCompare data={results} />}
             {activeTab === "tactics"  && <TacticsView data={results} />}
             {activeTab === "fit"      && <PlayerFitView data={results} />}
+            {activeTab === "heatmap"  && <HeatmapView data={results} />}
             {activeTab === "seasons"  && user && <SeasonComparison squads={squads} compareIds={compareIds} />}
           </>
         )}
@@ -224,13 +272,15 @@ export default function Home() {
         {/* Seasons tab accessible without loaded file if >=2 squads */}
         {!results && user && squads.length >= 2 && (
           <>
-            <div className="relative z-10 flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)]">
+            <div className="relative z-10 flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-[0_8px_20px_rgba(0,0,0,0.14)]">
               <button
                 onClick={() => setActiveTab("seasons")}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold"
+                className="focus-accent interactive-press flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold"
                 style={{ background: "var(--color-accent)", color: "#0a0e17" }}
               >
-                <span>📅</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
                 <span>Temporadas</span>
               </button>
             </div>

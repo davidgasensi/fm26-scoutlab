@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { Squad } from "@/lib/firestore";
 import { getAttrDisplayName } from "@/lib/attributeNames";
 import { calculateAllPlayers } from "@/lib/calculator";
 import { ALL_ROLES } from "@/lib/roles";
 import { ALL_ROLES_FM24 } from "@/lib/roles-fm24";
-import { GK_ATTRIBUTES, isGoalkeeper } from "@/lib/positions";
+import { GK_ATTRIBUTES, isGoalkeeper, getPositionZone } from "@/lib/positions";
+import { getScoreColor } from "@/lib/utils";
 
 interface SeasonComparisonProps {
   squads: Squad[];
@@ -26,18 +27,11 @@ function DeltaBadge({ d, size = "sm" }: { d: number; size?: "sm" | "xs" }) {
   );
 }
 
-function getScoreColor(s: number) {
-  if (s >= 16) return "#00ff87";
-  if (s >= 13) return "#22c55e";
-  if (s >= 10) return "#eab308";
-  if (s >= 7) return "#f97316";
-  return "#ef4444";
-}
-
 function getPositionGroup(positions: string[]): "POR" | "DEF" | "MED" | "ATA" {
-  if (positions.includes("POR")) return "POR";
-  if (positions.some((p) => p.startsWith("DL") || p.startsWith("MP"))) return "ATA";
-  if (positions.some((p) => p === "MC" || p.startsWith("ME"))) return "MED";
+  const zones = positions.map(getPositionZone);
+  if (zones.includes("POR")) return "POR";
+  if (zones.includes("ATA")) return "ATA";
+  if (zones.includes("MED")) return "MED";
   return "DEF";
 }
 
@@ -76,6 +70,88 @@ function defaultPair(squads: Squad[]): [string, string] {
 }
 
 
+// ─── CUSTOM SQUAD SELECT ─────────────────────────────────────────────────────
+
+interface SquadSelectProps {
+  label: string;
+  value: string;
+  squads: Squad[];
+  onChange: (id: string) => void;
+}
+
+function SquadSelect({ label, value, squads, onChange }: SquadSelectProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = squads.find((s) => s.id === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="rounded-lg border px-3 py-2.5" style={{ background: "var(--color-bg-card)", borderColor: open ? "var(--color-accent)50" : "var(--color-border-subtle)" }}>
+        <p className="text-[9px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1" style={{ fontFamily: "var(--font-mono)" }}>{label}</p>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="w-full flex items-center justify-between gap-2 text-left"
+        >
+          <span className="text-sm font-bold truncate" style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
+            {selected?.name ?? "—"}
+          </span>
+          <svg
+            width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="var(--color-text-muted)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            className={`shrink-0 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      </div>
+
+      {open && (
+        <div
+          className="absolute z-50 left-0 right-0 mt-1 rounded-lg border overflow-hidden shadow-xl"
+          style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)" }}
+        >
+          {squads.map((sq) => {
+            const isActive = sq.id === value;
+            return (
+              <button
+                key={sq.id}
+                type="button"
+                onClick={() => { onChange(sq.id); setOpen(false); }}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-sm transition-colors"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  background: isActive ? "var(--color-accent)15" : "transparent",
+                  color: isActive ? "var(--color-accent)" : "var(--color-text-primary)",
+                  fontWeight: isActive ? 700 : 400,
+                }}
+                onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "var(--color-bg-card-hover)"; }}
+                onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                <span className="truncate">{sq.name}</span>
+                {isActive && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SeasonComparison({ squads, compareIds }: SeasonComparisonProps) {
   const [squadAId, setSquadAId] = useState<string>(() => {
     if (compareIds) return orderedIds(compareIds[0], compareIds[1], squads)[0];
@@ -95,15 +171,15 @@ export default function SeasonComparison({ squads, compareIds }: SeasonCompariso
     setSquadBId(b);
     setFilter("all");
     setExpandedPlayers(new Set());
-  }, [compareIds]);
+  }, [compareIds, squads]);
 
-  const togglePlayer = (name: string) => {
+  const togglePlayer = useCallback((name: string) => {
     setExpandedPlayers((prev) => {
       const next = new Set(prev);
       next.has(name) ? next.delete(name) : next.add(name);
       return next;
     });
-  };
+  }, []);
 
   const squadA = squads.find((s) => s.id === squadAId) ?? null;
   const squadB = squads.find((s) => s.id === squadBId) ?? null;
@@ -216,20 +292,30 @@ export default function SeasonComparison({ squads, compareIds }: SeasonCompariso
         </p>
       </div>
 
-      {/* Selected squads display */}
+      {/* Squad selectors */}
       <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: "Anterior", id: squadAId },
-          { label: "Posterior", id: squadBId },
-        ].map(({ label, id }) => {
-          const sq = squads.find((s) => s.id === id);
-          return (
-            <div key={label} className="rounded-lg border px-3 py-2.5" style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)" }}>
-              <p className="text-[9px] uppercase tracking-widest text-[var(--color-text-muted)] mb-0.5" style={{ fontFamily: "var(--font-mono)" }}>{label}</p>
-              <p className="text-sm font-bold text-[var(--color-text-primary)]">{sq?.name ?? "—"}</p>
-            </div>
-          );
-        })}
+        {(
+          [
+            { label: "Anterior", value: squadAId, onChange: (id: string) => { setSquadAId(id); setExpandedPlayers(new Set()); } },
+            { label: "Posterior", value: squadBId, onChange: (id: string) => { setSquadBId(id); setExpandedPlayers(new Set()); } },
+          ] as const
+        ).map(({ label, value, onChange }) => (
+          <div key={label} className="rounded-lg border px-3 py-2.5" style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)" }}>
+            <p className="text-[9px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1" style={{ fontFamily: "var(--font-mono)" }}>{label}</p>
+            <select
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="w-full text-sm font-bold bg-transparent text-[var(--color-text-primary)] outline-none cursor-pointer"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              {squads.map((sq) => (
+                <option key={sq.id} value={sq.id} style={{ background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}>
+                  {sq.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
       </div>
 
 {squadAId !== squadBId && (() => {
@@ -348,8 +434,10 @@ export default function SeasonComparison({ squads, compareIds }: SeasonCompariso
                       className="rounded-xl border overflow-hidden"
                       style={{ background: "var(--color-bg-card)", borderColor: "var(--color-border-subtle)" }}
                     >
-                      <div
-                        className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-[var(--color-bg-card-hover)] transition-colors"
+                      <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-[var(--color-bg-card-hover)] transition-colors"
                         onClick={() => togglePlayer(p.name)}
                       >
                         <div className="flex-1 min-w-0">
@@ -389,7 +477,7 @@ export default function SeasonComparison({ squads, compareIds }: SeasonCompariso
                         >
                           <polyline points="6 9 12 15 18 9" />
                         </svg>
-                      </div>
+                      </button>
 
                       {isExpanded && (
                         <div className="border-t px-4 py-4" style={{ borderColor: "var(--color-border-subtle)" }}>

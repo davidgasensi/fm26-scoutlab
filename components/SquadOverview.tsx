@@ -3,41 +3,41 @@
 import { useMemo, useState } from "react";
 import { PlayerWithScores } from "@/lib/types";
 import { getPositionZone } from "@/lib/positions";
+import { getScoreColor, FIELD_POSITIONS } from "@/lib/utils";
 
 interface SquadOverviewProps {
   data: PlayerWithScores[];
 }
 
-const FIELD_DEPTH: ({ label: string; posKey: string } | null)[][] = [
-  [null,                              { label: "DL(C)", posKey: "DL-C" }, null                             ],
-  [{ label: "MP(I)", posKey: "MP-I" }, { label: "MP(C)", posKey: "MP-C" }, { label: "MP(D)", posKey: "MP-D" }],
-  [{ label: "ME(I)", posKey: "ME-I" }, { label: "ME(C)", posKey: "ME-C" }, { label: "ME(D)", posKey: "ME-D" }],
-  [{ label: "CR(I)", posKey: "CR-I" }, { label: "MC",    posKey: "MC"   }, { label: "CR(D)", posKey: "CR-D" }],
-  [{ label: "DF(I)", posKey: "DF-I" }, { label: "DF(C)", posKey: "DF-C" }, { label: "DF(D)", posKey: "DF-D" }],
-  [null,                              { label: "POR",   posKey: "POR"  }, null                             ],
-];
-
 const ZONE_META = {
-  POR: { label: "Portería",  color: "#ff6b35", icon: "🧤" },
-  DEF: { label: "Defensa",   color: "#3b82f6", icon: "🛡️" },
-  MED: { label: "Mediocampo",color: "#22c55e", icon: "⚙️" },
-  ATA: { label: "Ataque",    color: "#ef4444", icon: "⚡" },
+  POR: { label: "Portería",   color: "#ff6b35", icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="8" width="20" height="13" rx="1"/><path d="M6 8V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/>
+    </svg>
+  )},
+  DEF: { label: "Defensa",    color: "#3b82f6", icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L3 7v6c0 5.25 3.75 10.15 9 11.25C17.25 23.15 21 18.25 21 13V7l-9-5z"/>
+    </svg>
+  )},
+  MED: { label: "Mediocampo", color: "#22c55e", icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+    </svg>
+  )},
+  ATA: { label: "Ataque",     color: "#ef4444", icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  )},
 };
-
-function getScoreColor(s: number) {
-  if (s >= 16) return "#00ff87";
-  if (s >= 13) return "#22c55e";
-  if (s >= 10) return "#eab308";
-  if (s >= 7)  return "#f97316";
-  return "#ef4444";
-}
 
 function SquadDepth({ data }: { data: PlayerWithScores[] }) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const playersByPosKey = useMemo(() => {
     const map = new Map<string, string[]>();
-    for (const row of FIELD_DEPTH) {
+    for (const row of FIELD_POSITIONS) {
       for (const cell of row) {
         if (!cell) continue;
         const names = data
@@ -75,7 +75,7 @@ function SquadDepth({ data }: { data: PlayerWithScores[] }) {
         </svg>
 
         <div className="relative z-10 flex flex-col gap-3 py-2">
-          {FIELD_DEPTH.map((row, ri) => {
+          {FIELD_POSITIONS.map((row, ri) => {
             const showBelow = ri < 3;
             return (
               <div key={ri} className="flex justify-center gap-4">
@@ -165,7 +165,7 @@ export default function SquadOverview({ data }: SquadOverviewProps) {
     const overall = data.reduce((s, p) => s + (p.roleScores[0]?.score ?? 0), 0) / (data.length || 1);
 
     const bestByZone = (zone: string) =>
-      zones[zone].sort((a, b) => (b.roleScores[0]?.score ?? 0) - (a.roleScores[0]?.score ?? 0))[0] ?? null;
+      [...zones[zone]].sort((a, b) => (b.roleScores[0]?.score ?? 0) - (a.roleScores[0]?.score ?? 0))[0] ?? null;
 
     const attrTotals: Record<string, { sum: number; count: number }> = {};
     for (const p of data) {
@@ -264,7 +264,7 @@ export default function SquadOverview({ data }: SquadOverviewProps) {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">{meta.icon}</span>
+                  <span style={{ color: meta.color }}>{meta.icon}</span>
                   <span className="text-xs font-bold uppercase tracking-wider" style={{ color: meta.color, fontFamily: "var(--font-mono)" }}>
                     {zone}
                   </span>

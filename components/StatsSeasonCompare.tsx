@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { StatsSeason } from "@/lib/firestore";
 import { PlayerStats } from "@/lib/types";
 
@@ -40,6 +40,15 @@ export default function StatsSeasonCompare({ seasons }: Props) {
   const [seasonAId, setSeasonAId] = useState<string>(seasons[0]?.id ?? "");
   const [seasonBId, setSeasonBId] = useState<string>(seasons[1]?.id ?? "");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (seasonAId && !seasons.find((s) => s.id === seasonAId)) {
+      setSeasonAId(seasons[0]?.id ?? "");
+    }
+    if (seasonBId && !seasons.find((s) => s.id === seasonBId)) {
+      setSeasonBId(seasons[1]?.id ?? "");
+    }
+  }, [seasons]);
 
   const seasonA = seasons.find((s) => s.id === seasonAId);
   const seasonB = seasons.find((s) => s.id === seasonBId);
@@ -159,7 +168,7 @@ export default function StatsSeasonCompare({ seasons }: Props) {
                             <div className="flex flex-col items-center gap-0.5">
                               <span className="text-[var(--color-text-primary)] font-semibold">{valB.toFixed(col.decimals)}</span>
                               {delta !== null && (
-                                <span className="text-[9px] font-bold" style={{ color: deltaColor(delta, col.higherIsBetter, "#00ff87") }}>
+                                <span className="text-[9px] font-bold" style={{ color: deltaColor(delta, col.higherIsBetter, accent) }}>
                                   {deltaArrow(delta)} {Math.abs(delta) >= 0.01 ? Math.abs(delta).toFixed(col.decimals) : ""}
                                 </span>
                               )}

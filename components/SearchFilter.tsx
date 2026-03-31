@@ -5,6 +5,7 @@ interface SearchFilterProps {
   onSearchChange: (val: string) => void;
   activeZone: string | null;
   onZoneChange: (zone: string | null) => void;
+  zoneCounts: Record<string, number>;
 }
 
 const ZONES = [
@@ -19,6 +20,7 @@ export default function SearchFilter({
   onSearchChange,
   activeZone,
   onZoneChange,
+  zoneCounts,
 }: SearchFilterProps) {
   return (
     <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -43,7 +45,7 @@ export default function SearchFilter({
           placeholder="Buscar jugador..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/40 focus:ring-1 focus:ring-[var(--color-accent)]/20 transition-all"
+          className="focus-accent interactive-press w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/40 focus:ring-1 focus:ring-[var(--color-accent)]/20 transition-all"
           style={{ fontFamily: "var(--font-mono)" }}
         />
       </div>
@@ -56,15 +58,21 @@ export default function SearchFilter({
             <button
               key={zone.key}
               onClick={() => onZoneChange(isActive ? null : zone.key)}
-              className="px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase transition-all border"
+              className="focus-accent interactive-press px-3 py-2 rounded-lg text-xs font-bold tracking-wider uppercase transition-all border"
               style={{
                 fontFamily: "var(--font-mono)",
                 color: isActive ? zone.color : "var(--color-text-muted)",
-                backgroundColor: isActive ? `${zone.color}15` : "var(--color-bg-card)",
-                borderColor: isActive ? `${zone.color}40` : "var(--color-border-subtle)",
+                backgroundColor: isActive
+                  ? `color-mix(in srgb, ${zone.color} 18%, var(--color-bg-card))`
+                  : "var(--color-bg-card)",
+                borderColor: isActive
+                  ? `color-mix(in srgb, ${zone.color} 45%, transparent)`
+                  : "var(--color-border-subtle)",
+                boxShadow: isActive ? `0 0 0 1px color-mix(in srgb, ${zone.color} 30%, transparent)` : "none",
               }}
             >
-              {zone.label}
+              <span>{zone.label}</span>
+              <span className="ml-1.5 opacity-80">{zoneCounts[zone.key] ?? 0}</span>
             </button>
           );
         })}
